@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus[1m]",
+  "effortLevel": "xhigh",
+  "theme": "dark",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "voiceEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": true,
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "compound-engineering@compound-engineering-plugin": true,
+    "github@claude-plugins-official": false,
+    "skill-creator@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": false,
+    "context7@claude-plugins-official": false
+  },
+  "extraKnownMarketplaces": {
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "EveryInc/compound-engineering-plugin"
+      },
+      "autoUpdate": true
+    }
+  }
+}

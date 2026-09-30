@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+"""Append a dated entry to the system changelog in the Obsidian vault.
+
+Usage:
+  vault-write -c CATEGORY "descripción del cambio"
+  vault-write -c CATEGORY --date 2026-07-25 "descripción"
+  vault-write --flush     write queued entries once the vault is reachable
+  vault-write --where     show the resolved vault, note and pending entries
+
+The entry lands as `- **CATEGORY**: descripción` under `### YYYY-MM-DD` in the note's
+`## Changelog` section, keeping day headers in ascending order. When the vault is not
+reachable (e.g. the external drive is unmounted, or this machine has no vault), the entry is
+queued locally and written later by `--flush`.
+
+Configuration comes from environment variables, falling back to
+~/.config/agent-config/config.env (KEY=VALUE lines):
+  VAULT_PATH             vault root; takes precedence over drive detection
+  VAULT_DRIVE_LABEL      filesystem label of the drive holding the vault
+  VAULT_SUBDIR           vault root relative to that drive's mount point
+  VAULT_CHANGELOG_NOTE   note holding the changelog, relative to the vault root
+"""
+
+import argparse
+import datetime
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+CATEGORIES = (
+    "Claude Code",
+    "Agentes",
+    "Sistema",
+    "Software",
+    "Hardware",
+    "Repositorios",
+    "Configuración",
+    "Vault",
+)
+CHANGELOG_HEADER = "## Changelog"
+DAY_HEADER = re.compile(r"^### (\d{4}-\d{2}-\d{2})\s*$")
+
+
+class VaultError(Exception):
+    """A problem the user has to fix (bad config, malformed note, bad input)."""
+
+
+def config_path() -> Path:
+    base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    return Path(base) / "agent-config" / "config.env"
+
+
+def queue_path() -> Path:
+    base = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
+    return Path(base) / "agent-config" / "vault-queue.jsonl"
+
+
+def load_config() -> dict[str, str]:
+    """Read config.env, then let environment variables override it."""
+    config: dict[str, str] = {}
+    path = config_path()
+    if path.exists():
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            config[key.strip()] = value.strip().strip("\"'")
+    for key in ("VAULT_PATH", "VAULT_DRIVE_LABEL", "VAULT_SUBDIR", "VAULT_CHANGELOG_NOTE"):
+        if os.environ.get(key):
+            config[key] = os.environ[key]
+    return config
+
+
+def find_drive_mount(label: str) -> Path | None:
+    try:
+        result = subprocess.run(
+            ["findmnt", "-rn", "-o", "TARGET", "--source", f"LABEL={label}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
+    lines = result.stdout.strip().splitlines()
+    return Path(lines[0]) if lines else None
+
+
+def resolve_vault(config: dict[str, str]) -> tuple[Path | None, str]:
+    """Return (vault root, "") or (None, reason it is unreachable)."""
+    if config.get("VAULT_PATH"):
+        vault = Path(config["VAULT_PATH"]).expanduser()
+    elif config.get("VAULT_DRIVE_LABEL"):
+        mount = find_drive_mount(config["VAULT_DRIVE_LABEL"])
+        if mount is None:
+            return None, f"drive labeled {config['VAULT_DRIVE_LABEL']!r} is not mounted"
+        vault = mount / config.get("VAULT_SUBDIR", "")
+    else:
+        return None, f"no vault configured (set VAULT_PATH or VAULT_DRIVE_LABEL in {config_path()})"
+    if not vault.is_dir():
+        return None, f"vault directory {vault} does not exist"
+    return vault, ""
+
+
+def changelog_note(config: dict[str, str]) -> str:
+    note = config.get("VAULT_CHANGELOG_NOTE", "")
+    if not note:
+        raise VaultError(f"VAULT_CHANGELOG_NOTE is not set in {config_path()}")
+    return note
+
+
+def add_entry(text: str, day: str, category: str, description: str) -> str:
+    """Return `text` with the entry added under `### day` in the `## Changelog` section."""
+    lines = text.split("\n")
+    try:
+        start = next(i for i, line in enumerate(lines) if line.strip() == CHANGELOG_HEADER)
+    except StopIteration:
+        raise VaultError(f"note has no '{CHANGELOG_HEADER}' section") from None
+    end = next(
+        (i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")),
+        len(lines),
+    )
+    entry = f"- **{category}**: {description}"
+    days = [(i, m.group(1)) for i in range(start + 1, end) if (m := DAY_HEADER.match(lines[i]))]
+
+    for position, (index, existing) in enumerate(days):
+        if existing == day:
+            block_end = days[position + 1][0] if position + 1 < len(days) else end
+            lines.insert(last_content_line(lines, index, block_end) + 1, entry)
+            return "\n".join(lines)
+        if existing > day:
+            lines[index:index] = [f"### {day}", entry, ""]
+            return "\n".join(lines)
+
+    insert_at = last_content_line(lines, start, end) + 1
+    lines[insert_at:insert_at] = ["", f"### {day}", entry]
+    return "\n".join(lines)
+
+
+def last_content_line(lines: list[str], start: int, end: int) -> int:
+    """Index of the last non-blank line in lines[start:end], or `start` if all are blank."""
+    for i in range(end - 1, start, -1):
+        if lines[i].strip():
+            return i
+    return start
+
+
+def write_entry(note: Path, day: str, category: str, description: str) -> None:
+    if not note.is_file():
+        raise VaultError(f"changelog note {note} does not exist")
+    updated = add_entry(note.read_text(encoding="utf-8"), day, category, description)
+    tmp = note.with_name(f".{note.name}.tmp")
+    tmp.write_text(updated, encoding="utf-8")
+    tmp.replace(note)
+
+
+def read_queue() -> list[dict[str, str]]:
+    path = queue_path()
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+
+
+def enqueue(item: dict[str, str]) -> None:
+    path = queue_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as queue:
+        queue.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def flush(vault: Path) -> int:
+    """Write every queued entry into the vault. Returns how many were written."""
+    pending = read_queue()
+    for done, item in enumerate(pending):
+        try:
+            write_entry(vault / item["note"], item["date"], item["category"], item["description"])
+        except VaultError:
+            remaining = "".join(json.dumps(i, ensure_ascii=False) + "\n" for i in pending[done:])
+            queue_path().write_text(remaining, encoding="utf-8")
+            raise
+    queue_path().unlink(missing_ok=True)
+    return len(pending)
+
+
+def validate(category: str, description: str, day: str) -> None:
+    if category not in CATEGORIES:
+        raise VaultError(f"unknown category {category!r}; use one of: {', '.join(CATEGORIES)}")
+    if not description.strip() or "\n" in description:
+        raise VaultError("description must be a single non-empty line")
+    try:
+        datetime.date.fromisoformat(day)
+    except ValueError:
+        raise VaultError(f"--date must be YYYY-MM-DD, got {day!r}") from None
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="vault-write", description="Append an entry to the vault's system changelog."
+    )
+    action = parser.add_mutually_exclusive_group()
+    action.add_argument("--flush", action="store_true", help="write queued entries")
+    action.add_argument("--where", action="store_true", help="show vault location and queue")
+    parser.add_argument("-c", "--category", help=f"one of: {', '.join(CATEGORIES)}")
+    parser.add_argument("--date", default=datetime.date.today().isoformat())
+    parser.add_argument("description", nargs="*")
+    args = parser.parse_args(argv)
+    if not (args.flush or args.where) and not (args.category and args.description):
+        parser.error("an entry needs -c CATEGORY and a description")
+    return args
+
+
+def run(args: argparse.Namespace) -> str:
+    config = load_config()
+    vault, reason = resolve_vault(config)
+    if args.where:
+        note = config.get("VAULT_CHANGELOG_NOTE", "(unset)")
+        location = str(vault) if vault else f"unreachable: {reason}"
+        return f"vault: {location}\nnote:  {note}\nqueued entries: {len(read_queue())}"
+    if args.flush:
+        if vault is None:
+            raise VaultError(f"cannot flush, vault {reason}")
+        return f"✓ {flush(vault)} queued entries written"
+
+    description = " ".join(args.description)
+    validate(args.category, description, args.date)
+    note = changelog_note(config)
+    if vault is None:
+        enqueue(
+            {"date": args.date, "category": args.category, "description": description, "note": note}
+        )
+        return f"vault {reason} — entry queued in {queue_path()}; run `vault-write --flush` later"
+    write_entry(vault / note, args.date, args.category, description)
+    message = f"✓ {note} · {args.date} · {args.category}"
+    if read_queue():
+        message += "\n  there are queued entries: run `vault-write --flush`"
+    return message
+
+
+def main() -> int:
+    try:
+        print(run(parse_args(sys.argv[1:])))
+    except VaultError as error:
+        print(f"vault-write: {error}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
