@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Behavior tests for agents/claude/statusline.sh. Each test pipes a session payload into the
 # script and checks the rows it prints, with colour escapes stripped unless colour is the point.
+# The reading that sessions share lives under a throwaway XDG_CACHE_HOME.
 set -euo pipefail
 
 SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)/agents/claude/statusline.sh"
@@ -8,6 +9,10 @@ FAILURES=0
 WORKDIR="$(mktemp -d)"
 trap 'rm -r "$WORKDIR"' EXIT
 mkdir "$WORKDIR/myrepo"
+export XDG_CACHE_HOME="$WORKDIR/cache"
+LIMITS_FILE="$XDG_CACHE_HOME/agent-config/claude-rate-limits.json"
+NOW="$(date +%s)"
+FULL_LIMITS="5h ████████⣿⣿⣿⣿ 67% ↺ 4h 3m │ 7d ███████████⣿ 92% ↺ 1d 6h"
 
 fail() {
   printf '    FAIL: %s\n' "$*"
@@ -18,11 +23,11 @@ assert_eq() {
   [[ "$1" == "$2" ]] || fail "expected '$2', got '$1'"
 }
 
-# A complete payload, optionally changed by a jq filter. Filters can use $now (epoch seconds)
-# to place a reset time; the 30 s on top of each default keeps the countdowns stable while the
-# script runs.
+# A complete payload, optionally changed by a jq filter. Filters can use $now (when the tests
+# started, in epoch seconds) to place a reset time; the 30 s on top of each default keeps the
+# countdowns stable while the tests run.
 payload() {
-  jq -n --arg dir "$WORKDIR/myrepo" --argjson now "$(date +%s)" '
+  jq -n --arg dir "$WORKDIR/myrepo" --argjson now "$NOW" '
     {
       workspace: {current_dir: $dir},
       model: {display_name: "Opus 5.5"},
@@ -39,8 +44,19 @@ payload() {
     } | '"${1:-.}"
 }
 
+# Renders a payload as the only session on the machine: nothing shared by other sessions.
 render() {
+  rm -f "$LIMITS_FILE"
+  render_alongside "${1:-.}"
+}
+
+# Renders a payload as one more session, after whatever the earlier ones shared.
+render_alongside() {
   payload "${1:-.}" | "$SCRIPT"
+}
+
+limits_alongside() { # [payload filter]: the limits row of one more session
+  render_alongside "${1:-.}" | plain | sed -n 3p
 }
 
 plain() {
@@ -64,7 +80,7 @@ test_full_payload_renders_three_rows() {
   out="$(render | plain)"
   assert_eq "$(sed -n 1p <<<"$out")" "[Opus 5.5 · xhigh] myrepo"
   assert_eq "$(sed -n 2p <<<"$out")" "▉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ 8% │ \$0.62 │ 2m 5s ↻95%"
-  assert_eq "$(sed -n 3p <<<"$out")" "5h ████████⣿⣿⣿⣿ 67% ↺ 4h 3m │ 7d ███████████⣿ 92% ↺ 1d 6h"
+  assert_eq "$(sed -n 3p <<<"$out")" "$FULL_LIMITS"
   assert_eq "$(grep -c '' <<<"$out")" "3"
 }
 
@@ -151,6 +167,58 @@ test_context_bar_shares_the_limit_colours() {
 
 test_context_not_measured_yet_leaves_the_gauge_out() {
   assert_eq "$(row 2 '.context_window.remaining_percentage = null')" "\$0.62 │ 2m 5s ↻95%"
+}
+
+test_idle_session_shows_what_a_busier_one_shared() {
+  render '.rate_limits.five_hour.used_percentage = 60' >/dev/null
+  assert_eq "$(limits_alongside)" "5h ████▊⣿⣿⣿⣿⣿⣿⣿ 40% ↺ 4h 3m │ 7d ███████████⣿ 92% ↺ 1d 6h"
+}
+
+test_busier_session_replaces_what_an_idle_one_shared() {
+  local busier="5h ████▊⣿⣿⣿⣿⣿⣿⣿ 40% ↺ 4h 3m │ 7d ███████████⣿ 92% ↺ 1d 6h"
+  render >/dev/null
+  assert_eq "$(limits_alongside '.rate_limits.five_hour.used_percentage = 60')" "$busier"
+  assert_eq "$(limits_alongside)" "$busier"
+}
+
+test_new_window_replaces_a_fuller_one_about_to_reset() {
+  local old='.rate_limits.five_hour.used_percentage = 90'
+  local new=".rate_limits.five_hour = {used_percentage: 2, resets_at: (\$now + 5 * 3600 + 90)}"
+  local fresh="5h ███████████▊ 98% ↺ 5h 1m │ 7d ███████████⣿ 92% ↺ 1d 6h"
+  render "$old" >/dev/null
+  assert_eq "$(limits_alongside "$new")" "$fresh"
+  assert_eq "$(limits_alongside "$old")" "$fresh"
+}
+
+test_window_this_session_lost_comes_from_the_shared_reading() {
+  render >/dev/null
+  assert_eq "$(limits_alongside 'del(.rate_limits.five_hour)')" "$FULL_LIMITS"
+}
+
+test_session_without_limits_ignores_the_shared_reading() {
+  render >/dev/null
+  assert_eq "$(render_alongside 'del(.rate_limits)' | grep -c '')" "2"
+}
+
+test_shared_reading_past_its_reset_is_ignored() {
+  mkdir -p "${LIMITS_FILE%/*}"
+  printf '{"five_hour":{"used_percentage":99,"resets_at":%d}}\n' "$((NOW - 60))" >"$LIMITS_FILE"
+  assert_eq "$(limits_alongside 'del(.rate_limits.five_hour)')" "7d ███████████⣿ 92% ↺ 1d 6h"
+}
+
+test_unreadable_shared_reading_is_replaced() {
+  mkdir -p "${LIMITS_FILE%/*}"
+  printf 'not json' >"$LIMITS_FILE"
+  assert_eq "$(limits_alongside)" "$FULL_LIMITS"
+  assert_eq "$(limits_alongside 'del(.rate_limits.five_hour)')" "$FULL_LIMITS"
+}
+
+test_unwritable_cache_still_shows_this_session() {
+  local out
+  : >"$WORKDIR/not-a-directory"
+  out="$(payload | XDG_CACHE_HOME="$WORKDIR/not-a-directory" "$SCRIPT" 2>"$WORKDIR/stderr" | plain)"
+  assert_eq "$(sed -n 3p <<<"$out")" "$FULL_LIMITS"
+  grep -q "cannot write" "$WORKDIR/stderr" || fail "a failed write should be reported on stderr"
 }
 
 test_invalid_input_fails_with_no_output() {

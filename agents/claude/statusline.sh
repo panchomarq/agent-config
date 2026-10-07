@@ -20,6 +20,10 @@ AMBER=$'\033[38;2;250;204;21m'
 RED=$'\033[38;2;248;113;113m'
 
 BAR_WIDTH=12
+
+# Limits belong to the account, but a session only receives the reading from its own last
+# response. Sessions publish the freshest reading here so that all of them show the same one.
+LIMITS_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/agent-config/claude-rate-limits.json"
 PARTIAL_BLOCKS=('' '▏' '▎' '▍' '▌' '▋' '▊' '▉')
 
 # <fill percent> <percent left>: a bar filled to the first value and that figure next to it,
@@ -67,17 +71,35 @@ join_segments() {
     printf '%s' "$joined"
 }
 
+shared_limits=$(cat "$LIMITS_FILE" 2>/dev/null) || shared_limits=""
+
 # Fields are joined with the unit separator, not a tab: read collapses consecutive whitespace
 # delimiters, so an absent value would shift every field after it.
-if ! fields=$(jq -r '
-    def limit_window($w):
-        if ($w.used_percentage | type) == "number" and ($w.resets_at | type) == "number"
-            and $w.resets_at > now
-        then [
-            (100 - $w.used_percentage | floor | if . < 0 then 0 else . end),
-            ($w.resets_at - now | floor)
-        ]
-        else [null, null] end;
+if ! fields=$(jq -r --arg shared "$shared_limits" '
+    now as $now |
+    def reading:
+        select(type == "object" and (.used_percentage | type) == "number"
+            and (.resets_at | type) == "number" and .resets_at > $now)
+        | {used_percentage, resets_at};
+    # Usage only grows until a window resets, so of two readings the fresher one has the
+    # later reset or, for the same reset, the higher usage.
+    def freshest($own; $shared):
+        [($own, $shared) | reading] | max_by([.resets_at, .used_percentage]);
+    def left_and_seconds($window):
+        if $window == null then [null, null]
+        else [
+            (100 - $window.used_percentage | floor | if . < 0 then 0 else . end),
+            ($window.resets_at - $now | floor)
+        ] end;
+    # Only a session that has limits of its own reads the shared ones: without them it may be
+    # using an API key, where the subscription limits do not apply.
+    (if (.rate_limits | type) == "object" then
+        ($shared | try fromjson catch null | if type == "object" then . else {} end) as $shared
+        | {
+            five_hour: freshest(.rate_limits.five_hour; $shared.five_hour),
+            seven_day: freshest(.rate_limits.seven_day; $shared.seven_day)
+        } | with_entries(select(.value != null))
+    else {} end) as $limits |
     [
         .workspace.current_dir // "unknown",
         .model.display_name // "Unknown",
@@ -96,14 +118,22 @@ if ! fields=$(jq -r '
             else 0 end
         ) catch 0),
         .effort.level,
-        limit_window(.rate_limits.five_hour)[],
-        limit_window(.rate_limits.seven_day)[]
+        left_and_seconds($limits.five_hour)[],
+        left_and_seconds($limits.seven_day)[],
+        (if $limits == {} then null else $limits | tojson end)
     ] | join("\u001f")') || [ -z "$fields" ]; then
     echo "statusline: expected the Claude Code session JSON on stdin" >&2
     exit 1
 fi
 IFS=$'\037' read -r current_dir model_name cost duration_ms ctx_used cache_pct effort \
-    five_left five_secs week_left week_secs <<<"$fields"
+    five_left five_secs week_left week_secs limits <<<"$fields"
+
+if [ -n "$limits" ] && [ "$limits" != "$shared_limits" ]; then
+    if ! { mkdir -p "${LIMITS_FILE%/*}" && printf '%s\n' "$limits" >"$LIMITS_FILE"; } \
+        2>/dev/null; then
+        echo "statusline: cannot write $LIMITS_FILE, so sessions will not share limits" >&2
+    fi
+fi
 
 folder_name=$(basename "$current_dir")
 short_model=$(sed -E 's/Claude [0-9.]+ //; s/^Claude //' <<<"$model_name")

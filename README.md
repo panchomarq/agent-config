@@ -124,6 +124,14 @@ casos, deja una fila en `docs/inventory.md` con la fecha y el motivo.
    hasta que se reinicia. Solo aparece en cuentas Pro/Max, después de la primera respuesta de
    la sesión.
 
+Los límites son de la cuenta, pero cada sesión solo recibe la lectura de su última respuesta,
+así que varias sesiones abiertas verían valores distintos. Por eso cada sesión publica la
+lectura más reciente en `~/.cache/agent-config/claude-rate-limits.json` (bajo
+`$XDG_CACHE_HOME` si está definido) y todas muestran esa; con el `refreshInterval` de 60 s,
+una sesión inactiva se pone al día en un minuto. Dos cosas a tener en cuenta: el uso hecho
+fuera de Claude Code en esta máquina (claude.ai, otra PC) aparece recién cuando una sesión
+local recibe su siguiente respuesta, y el archivo supone una sola cuenta por máquina.
+
 Las barras y sus porcentajes van en verde con la mitad o más disponible, en ámbar por debajo
 de la mitad y en rojo por debajo de un quinto. Son colores de 24 bits, así que no dependen de
 la paleta del tema del terminal.
