@@ -37,6 +37,7 @@ it into each agent's config directory on any machine. Updating a machine means
 | `agents/claude/CLAUDE.md` | `~/.claude/CLAUDE.md` (imports `~/.agents/AGENTS.md`) |
 | `agents/claude/settings.json` | merged into `~/.claude/settings.json` |
 | `agents/claude/statusline.sh`, `commands/*` | `~/.claude/` |
+| `agents/claude/mods/*` | plugins of the `agent-config` marketplace (`.claude-plugin/marketplace.json`), installed by `claude plugin install` |
 | `agents/opencode/opencode.json` | merged into `~/.config/opencode/opencode.json` |
 | `bin/*` | `~/.local/bin/` |
 | `config.env.example` | copied once to `~/.config/agent-config/config.env` |

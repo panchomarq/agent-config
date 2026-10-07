@@ -5,6 +5,22 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-07
+
+### Added
+
+- Mod `task-progress` (`agents/claude/mods/task-progress`): bloque a la derecha del pie de
+  Claude Code, junto a la statusline, con el título de la tarea, una barra de 12 celdas, el
+  porcentaje y el paso activo con el tiempo. El porcentaje sale de los pasos que Claude declara
+  con la herramienta `mcp__task-progress__plan`; sin plan muestra las herramientas usadas y el
+  tiempo del turno, y si el turno termina con pasos pendientes se pone en ámbar.
+- `.claude-plugin/marketplace.json`: el repo es el marketplace `agent-config`, y
+  `agents/claude/settings.json` lo declara y activa `task-progress@agent-config`, así que
+  `install.sh` lo instala como los demás plugins.
+- `tests/run.sh` valida el marketplace y valida y prueba cada mod con `claude plugin` cuando
+  `claude` está en el PATH; `tests/check_inventory.sh` comprueba que cada plugin del
+  marketplace exista en su ruta.
+
 ## [1.1.1] - 2026-10-07
 
 ### Fixed
