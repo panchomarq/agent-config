@@ -5,6 +5,16 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-07
+
+### Fixed
+
+- Statusline: todas las sesiones abiertas muestran los mismos límites. Cada sesión solo recibe
+  la lectura de su última respuesta, así que varios chats mostraban valores distintos y uno
+  inactivo se quedaba con un valor viejo. Ahora comparten la lectura más reciente en
+  `$XDG_CACHE_HOME/agent-config/claude-rate-limits.json`, y una sesión inactiva la toma en el
+  siguiente refresco (60 s).
+
 ## [1.1.0] - 2026-10-07
 
 ### Added
