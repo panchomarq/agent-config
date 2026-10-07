@@ -10,4 +10,5 @@ uvx ruff@0.14.0 format --check --line-length 100 bin/vault-write tests/test_vaul
 for f in agents/claude/settings.json agents/opencode/opencode.json; do jq empty "$f"; done
 tests/check_inventory.sh
 bash tests/install_test.sh
+bash tests/statusline_test.sh
 uv run --no-project --with pytest==8.4.2 pytest -q tests/test_vault_write.py

@@ -22,7 +22,7 @@ agent-config/
 ├── config.env.example        plantilla de la config local de cada máquina
 ├── docs/inventory.md         qué está activo, desactivado o retirado, y por qué
 ├── install.sh                instalador / actualizador
-└── tests/                    tests del instalador y de vault-write
+└── tests/                    tests del instalador, de la statusline y de vault-write
 ```
 
 Cómo lo consume cada agente:
@@ -108,6 +108,26 @@ Para **dejar de usar** algo: bórralo del repo (el instalador elimina sus symlin
 máquina) o, si es un plugin, ponlo en `false` en `agents/claude/settings.json`. En ambos
 casos, deja una fila en `docs/inventory.md` con la fecha y el motivo.
 
+## Statusline de Claude Code
+
+`agents/claude/statusline.sh` muestra hasta tres filas:
+
+```
+[Opus 5.5 · xhigh] mi-repo │ mi-rama
+▉⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ 8% │ $0.62 │ 2m 5s ↻95%
+5h ████████⣿⣿⣿⣿ 67% ↺ 4h 3m │ 7d ███████████⣿ 92% ↺ 1d 6h
+```
+
+1. Modelo, nivel de esfuerzo, carpeta y rama.
+2. Contexto **usado**, costo de la sesión, duración y porcentaje de tokens leídos de caché.
+3. Límites de la suscripción (ventana de 5 horas y semanal): porcentaje que **queda** y tiempo
+   hasta que se reinicia. Solo aparece en cuentas Pro/Max, después de la primera respuesta de
+   la sesión.
+
+Las barras y sus porcentajes van en verde con la mitad o más disponible, en ámbar por debajo
+de la mitad y en rojo por debajo de un quinto. Son colores de 24 bits, así que no dependen de
+la paleta del tema del terminal.
+
 ## Estándares que sigue
 
 - [AGENTS.md](https://agents.md): un único archivo de instrucciones que leen Codex, Gemini
@@ -121,7 +141,7 @@ casos, deja una fila en `docs/inventory.md` con la fecha y el motivo.
 ## Desarrollo
 
 ```bash
-tests/run.sh    # shellcheck, ruff, JSON, inventario, tests del instalador y de vault-write
+tests/run.sh    # shellcheck, ruff, JSON, inventario y tests (instalador, statusline, vault-write)
 ```
 
 El CI corre lo mismo en cada PR.
