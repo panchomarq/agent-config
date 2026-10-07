@@ -136,6 +136,24 @@ Las barras y sus porcentajes van en verde con la mitad o más disponible, en ám
 de la mitad y en rojo por debajo de un quinto. Son colores de 24 bits, así que no dependen de
 la paleta del tema del terminal.
 
+## Navegador de Playwright
+
+El plugin `playwright` corre el navegador oculto (`PLAYWRIGHT_MCP_HEADLESS`) y con un perfil
+temporal por sesión (`PLAYWRIGHT_MCP_ISOLATED`), así varias sesiones abiertas no abren ventanas
+en el escritorio ni compiten por el mismo perfil. Los dos valores están en `env` de
+`agents/claude/settings.json`.
+
+Playwright busca Google Chrome. En una máquina que no lo tiene, indica el navegador instalado
+en `~/.claude/settings.json`:
+
+```json
+"env": { "PLAYWRIGHT_MCP_EXECUTABLE_PATH": "/ruta/al/navegador" }
+```
+
+El instalador conserva ese valor al mezclar la configuración del repo. Va en
+`~/.claude/settings.json` y no en `~/.claude/settings.local.json`, porque ese archivo solo se
+aplica a las sesiones abiertas en `~`. El cambio vale para las sesiones nuevas.
+
 ## Estándares que sigue
 
 - [AGENTS.md](https://agents.md): un único archivo de instrucciones que leen Codex, Gemini
