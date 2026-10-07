@@ -12,8 +12,11 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 - Statusline de Claude Code: tercera fila con los límites de la suscripción (ventana de 5 horas
   y semanal) con barra, porcentaje que queda y tiempo hasta el reinicio; y el nivel de esfuerzo
   junto al modelo.
-- `refreshInterval` de 60 s en `statusLine`, para que la cuenta regresiva avance con la sesión
-  inactiva.
+- Statusline: las sesiones comparten la lectura más reciente de los límites en
+  `$XDG_CACHE_HOME/agent-config/claude-rate-limits.json`. Cada sesión solo recibe la lectura de
+  su última respuesta, así que varios chats abiertos mostraban valores distintos.
+- `refreshInterval` de 60 s en `statusLine`, para que la cuenta regresiva avance y una sesión
+  inactiva tome la lectura compartida.
 - `tests/statusline_test.sh`: tests de comportamiento de la statusline, incluidos en
   `tests/run.sh`.
 
