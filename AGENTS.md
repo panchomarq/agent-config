@@ -44,7 +44,7 @@ it into each agent's config directory on any machine. Updating a machine means
 ## Every change
 
 1. Run `tests/run.sh` (shellcheck, ruff, JSON validity, inventory check, installer tests in a
-   throwaway `HOME`, `vault-write` tests). It must pass with zero warnings.
+   throwaway `HOME`, status line tests, `vault-write` tests). It must pass with zero warnings.
 2. Update `docs/inventory.md` when adding, disabling or retiring anything.
 3. Add an entry under `## [Unreleased]` in `CHANGELOG.md`; on release, bump `VERSION`
    (SemVer: breaking layout/installer change = major, new skill or setting = minor,

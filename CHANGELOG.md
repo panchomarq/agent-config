@@ -5,6 +5,26 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-07
+
+### Added
+
+- Statusline de Claude Code: tercera fila con los límites de la suscripción (ventana de 5 horas
+  y semanal) con barra, porcentaje que queda y tiempo hasta el reinicio; y el nivel de esfuerzo
+  junto al modelo.
+- `refreshInterval` de 60 s en `statusLine`, para que la cuenta regresiva avance con la sesión
+  inactiva.
+- `tests/statusline_test.sh`: tests de comportamiento de la statusline, incluidos en
+  `tests/run.sh`.
+
+### Changed
+
+- Statusline: los niveles (verde, ámbar, rojo) usan colores de 24 bits en lugar de la paleta
+  del terminal, que un tema puede remapear; con un tema monocromo se veían todos grises. La
+  barra de contexto usa los mismos niveles y dibuja fracciones de celda.
+- Statusline: corre con `set -euo pipefail` y termina con error si no recibe el JSON de la
+  sesión.
+
 ## [1.0.0] - 2026-09-30
 
 ### Added

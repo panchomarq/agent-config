@@ -8,7 +8,8 @@
   "theme": "dark",
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/statusline.sh"
+    "command": "~/.claude/statusline.sh",
+    "refreshInterval": 60
   },
   "voice": {
     "enabled": true,
