@@ -16,4 +16,14 @@ for name in "${names[@]}"; do
     missing=1
   fi
 done
+
+# A plugin served by this repo's own marketplace must exist at the path the marketplace names.
+while read -r id; do
+  src="$(jq -r --arg name "${id%@agent-config}" '.plugins[] | select(.name == $name) | .source' \
+    .claude-plugin/marketplace.json)"
+  if [[ ! -f "$src/.claude-plugin/plugin.json" ]]; then
+    printf '.claude-plugin/marketplace.json has no plugin at "%s" for %s\n' "$src" "$id"
+    missing=1
+  fi
+done < <(jq -r '.enabledPlugins | keys[] | select(endswith("@agent-config"))' agents/claude/settings.json)
 exit "$missing"

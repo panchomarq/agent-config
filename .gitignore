@@ -2,3 +2,7 @@
 .pytest_cache/
 __pycache__/
 .ruff_cache/
+
+# Written by Claude Code each time it loads a mod from a folder
+agents/claude/mods/*/.claude-plugin/types/
+agents/claude/mods/*/tsconfig.json

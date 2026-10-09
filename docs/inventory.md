@@ -50,6 +50,7 @@ Skills externas que **no** gestiona este repo: `omarchy` (la instala Omarchy en
 | `playwright@claude-plugins-official` | activo | 2026-05-25 | Automatización de browser |
 | `vercel@claude-plugins-official` | activo | 2026-05-25 | Deploys y guías de Vercel (el más usado) |
 | `compound-engineering@compound-engineering-plugin` | activo | 2026-05-25 | Flujo brainstorm → plan → work → review |
+| `task-progress@agent-config` | activo | 2026-10-07 | Mod propio (`agents/claude/mods/task-progress`): progreso de la tarea junto a la statusline |
 | `github@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso en 130 arranques; `gh` cubre lo mismo |
 | `skill-creator@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso |
 | `context7@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso |

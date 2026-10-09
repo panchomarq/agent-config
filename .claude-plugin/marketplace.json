@@ -1,0 +1,14 @@
+{
+  "name": "agent-config",
+  "owner": {
+    "name": "panchomarq"
+  },
+  "plugins": [
+    {
+      "name": "task-progress",
+      "source": "./agents/claude/mods/task-progress",
+      "description": "Shows the progress of the task the session is working on at the right of the footer"
+    }
+  ],
+  "description": "Mods of Claude Code written for this setup"
+}
