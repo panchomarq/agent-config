@@ -79,6 +79,94 @@ test_settings_merge_keeps_local_keys_and_repo_wins() {
   compgen -G "$s.bak-*" >/dev/null || fail "merged settings should keep a backup"
 }
 
+test_settings_merge_unites_the_permission_lists() {
+  mkdir -p "$SANDBOX/home/.claude"
+  echo '{"permissions":{"allow":["Bash(ls)","Bash(git push *)"],"deny":["Bash(rm *)"]}}' \
+    >"$SANDBOX/home/.claude/settings.json"
+  run_install >/dev/null
+  local s="$SANDBOX/home/.claude/settings.json" repo="$REPO/agents/claude/settings.json" rule
+  assert_eq "$(jq -c '.permissions.allow' "$s")" '["Bash(ls)","Bash(git push *)"]'
+  assert_eq "$(jq -r '.permissions.deny[0]' "$s")" "Bash(rm *)"
+  while IFS= read -r rule; do
+    jq -e --arg rule "$rule" '.permissions.deny | index($rule)' "$s" >/dev/null ||
+      fail "the shared deny rule $rule should reach the machine's settings"
+  done < <(jq -r '.permissions.deny[]' "$repo")
+  assert_eq "$(jq '.permissions.deny | length' "$s")" \
+    "$(($(jq '.permissions.deny | length' "$repo") + 1))"
+  local before
+  before="$(cat "$s")"
+  run_install >/dev/null
+  assert_eq "$(cat "$s")" "$before"
+}
+
+# Whether a permission rule matches a command, as the Claude Code docs describe it: `*`
+# stands for any run of characters, and a rule that ends in ` *` also matches the command
+# without arguments. An approximation, good for the plain commands checked below.
+rule_matches() {
+  local pattern="${1#Bash(}" command="$2"
+  pattern="${pattern%)}"
+  # shellcheck disable=SC2053  # the rule is a glob on purpose
+  [[ $command == $pattern ]] && return 0
+  [[ $pattern == *" *" && $command == "${pattern% \*}" ]]
+}
+
+# Prints what the shared rules do with a command: deny beats allow, as in Claude Code.
+push_verdict() {
+  local settings="$REPO/agents/claude/settings.json" rule verdict="unmatched"
+  while IFS= read -r rule; do
+    if rule_matches "$rule" "$1"; then verdict="allowed"; fi
+  done < <(jq -r '.permissions.allow[]' "$settings")
+  while IFS= read -r rule; do
+    if rule_matches "$rule" "$1"; then verdict="denied"; fi
+  done < <(jq -r '.permissions.deny[]' "$settings")
+  printf '%s\n' "$verdict"
+}
+
+test_shared_rules_let_a_named_feature_branch_through() {
+  local command
+  for command in \
+    "git push origin feat/native-surface" \
+    "git push -u origin feat/native-surface" \
+    "git push --set-upstream origin docs/agents-md" \
+    "git push origin feat/main-menu" \
+    "git push origin HEAD:feat/x" \
+    "git push origin v1.3.0"; do
+    assert_eq "$(push_verdict "$command")" "allowed"
+  done
+}
+
+test_shared_rules_refuse_main_forced_and_unnamed_pushes() {
+  local command
+  for command in \
+    "git push origin main" \
+    "git push -u origin main" \
+    "git push origin HEAD:main" \
+    "git push origin feat/x:main" \
+    "git push origin :main" \
+    "git push origin refs/heads/main" \
+    "git push origin HEAD:refs/heads/main" \
+    "git push --force origin feat/x" \
+    "git push origin feat/x --force" \
+    "git push --force-with-lease origin feat/x" \
+    "git push origin feat/x --force-with-lease" \
+    "git push -f origin feat/x" \
+    "git push origin feat/x -f" \
+    "git push origin +feat/x" \
+    "git push --mirror" \
+    "git push origin --mirror" \
+    "git push --all" \
+    "git push origin --all" \
+    "git push" \
+    "git push origin" \
+    "git push -u origin" \
+    "git push origin HEAD" \
+    "git push -u origin HEAD"; do
+    assert_eq "$(push_verdict "$command")" "denied"
+  done
+  # Outside the rules altogether, so Claude Code's own review still sees it.
+  assert_eq "$(push_verdict "git -C . push origin main")" "unmatched"
+}
+
 test_invalid_settings_json_aborts_untouched() {
   mkdir -p "$SANDBOX/home/.claude"
   echo '{broken' >"$SANDBOX/home/.claude/settings.json"

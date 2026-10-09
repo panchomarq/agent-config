@@ -5,6 +5,31 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-09
+
+### Added
+
+- Reglas de permisos compartidas para `git push` en `agents/claude/settings.json`: Claude Code
+  puede empujar una rama nombrada sin pasar por el clasificador del modo automático, y se
+  niega antes de cualquier otra revisión un push que nombre `main` (también `HEAD:main`,
+  `x:main` y `refs/heads/main`), un push forzado en cualquier forma (`--force`,
+  `--force-with-lease`, `-f`, `+rama`), `--all`, `--mirror` y un push que no nombre su rama
+  (`git push`, `git push origin`, `git push origin HEAD`), que desde `main` empujaría `main`
+  sin que la regla lo vea. Valen en todos los proyectos después de `./install.sh`.
+- `global/AGENTS.md`: nunca forzar un push, y empujar siempre con la rama nombrada.
+
+### Changed
+
+- `install.sh` une las listas `permissions.allow`, `ask` y `deny` de la máquina con las del
+  repo en vez de dejar que las del repo las reemplacen. Una regla que se quite del repo hay
+  que quitarla a mano de `~/.claude/settings.json`.
+
+### Fixed
+
+- `agents/claude/CLAUDE.md` y el README decían que los permisos de una sola máquina van en
+  `~/.claude/settings.local.json`. Claude Code solo lee ese archivo en sesiones abiertas en el
+  home, así que una regla ahí no llega a ningún otro proyecto. Ahora dicen dónde va cada una.
+
 ## [1.2.0] - 2026-10-07
 
 ### Added
