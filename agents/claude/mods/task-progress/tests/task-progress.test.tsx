@@ -51,6 +51,8 @@ const submit = ($: Engine, text: string) =>
 const declare = ($: Engine, done: number, total = 6) =>
   $.tool.call({ tool: TOOL, title: TITLE, steps: stepsWith(done, total) })
 
+const runCommand = ($: Engine, command: string, args = '') => $.command.run({ command, args })
+
 const mountFooter = ($: Engine, viewport = WIDE, modes: readonly string[] = []) =>
   $.ui.mount({
     plugin: 'task-progress',
@@ -90,7 +92,7 @@ test('a running plan shows its title, percent, gauge and active step', async ($,
   expect(texts).toContain('████████')
   expect(texts).toContain('⣿⣿⣿⣿')
   expect(texts).toContain(' 67%')
-  expect(texts).toContain('4/6 · Paso 5 · 2m 14s')
+  expect(texts).toContain('4/6 · Paso 5 · 2m 14s · ~1m')
 })
 
 test('a narrow terminal drops the step label and shortens the title', async ($, on) => {
@@ -270,4 +272,102 @@ test('the session start registers the tool and forgets a stale turn', async ($, 
   expect(registered).toHaveLength(1)
   expect(registered[0]).toMatchObject({ name: 'plan', isDeferred: false })
   expect(await engineOwnText($)).toBe('')
+})
+
+test('sized steps weigh the percent: S, M and L count 1, 2 and 3', async ($, on) => {
+  engineBeneath(on)
+  await startTurn($)
+  await $.tool.call({
+    tool: TOOL,
+    title: TITLE,
+    steps: [
+      { label: 'Leer', status: 'done', size: 'S' },
+      { label: 'Migrar', status: 'active', size: 'L' },
+      { label: 'Probar', status: 'pending' },
+    ],
+  })
+
+  expect(await textsOf($)).toContain(' 17%')
+})
+
+test('a size that is not S, M or L is refused', async ($, on) => {
+  engineBeneath(on)
+  const ran = await $.tool.call({
+    tool: TOOL,
+    title: TITLE,
+    steps: [{ label: 'Leer', status: 'active', size: 'XL' }],
+  })
+
+  expect(ran.deny).toMatch(/steps\[0\]\.size must be one of S, M, L/)
+})
+
+test('the time left shows only once two steps are done, at the plan\'s own pace', async ($, on) => {
+  const clock = engineBeneath(on)
+  await startTurn($)
+  await declare($, 0)
+  await clock.advance(60_000)
+  await declare($, 1)
+
+  expect(await textsOf($)).toContain('1/6 · Paso 2 · 1m 0s')
+
+  await clock.advance(60_000)
+  await declare($, 2)
+
+  // Two of six equal steps took 2 minutes, so four more take about 4.
+  expect(await textsOf($)).toContain('2/6 · Paso 3 · 2m 0s · ~4m')
+})
+
+test('a plan that grows past its first version says by how much', async ($, on) => {
+  engineBeneath(on)
+  await startTurn($)
+  await declare($, 1, 6)
+  await declare($, 1, 8)
+
+  expect(await textsOf($)).toContain('1/8 (+2) · Paso 2 · 0s')
+})
+
+test('/progress lists every step with its size, the percent and the growth', async ($, on) => {
+  const clock = engineBeneath(on)
+  await startTurn($)
+  await declare($, 0, 2)
+  await $.tool.call({
+    tool: TOOL,
+    title: TITLE,
+    steps: [
+      { label: 'Leer', status: 'done', size: 'S' },
+      { label: 'Migrar', status: 'active', size: 'L' },
+      { label: 'Probar', status: 'pending' },
+    ],
+  })
+  await clock.advance(90_000)
+
+  const shown = await runCommand($, 'progress')
+
+  expect(shown.text).toBe(
+    [
+      `${TITLE} · 1/3 (+1) · 17% · 1m 30s`,
+      'El plan creció de 2 a 3 pasos.',
+      '✔ S  Leer',
+      '◆ L  Migrar',
+      '○ M  Probar',
+    ].join('\n'),
+  )
+})
+
+test('/progress without a plan says so', async ($, on) => {
+  engineBeneath(on)
+
+  expect((await runCommand($, 'progress')).text).toBe('Sin plan de pasos en curso.')
+})
+
+test('/goal asks Claude for a sized plan, and stopping a goal does not', async ($, on) => {
+  engineBeneath(on)
+  on('command.run', { command: 'goal' }, () => ({ text: 'Goal set.' }))
+
+  const started = await runCommand($, 'goal', 'all tests pass')
+  const stopped = await runCommand($, 'goal', 'clear')
+
+  expect(started.text).toBe('Goal set.')
+  expect(started.context?.[0]).toMatch(/A \/goal just started.*sized S, M or L/)
+  expect(stopped.context ?? []).toEqual([])
 })

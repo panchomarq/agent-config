@@ -8,6 +8,26 @@
       "name": "task-progress",
       "source": "./agents/claude/mods/task-progress",
       "description": "Shows the progress of the task the session is working on at the right of the footer"
+    },
+    {
+      "name": "blast-radius",
+      "source": {
+        "source": "git-subdir",
+        "url": "anthropics/claude-code-playground",
+        "path": "claude-code/mods/blast-radius",
+        "sha": "569c5283d9a0a7ee7938df85bb32e4f48cbb8c86"
+      },
+      "description": "Holds risky shell commands (rm -rf, git reset --hard, force push, migrations) and shows what they would change, with Proceed and Cancel buttons. By Anthropic, pinned to a reviewed commit."
+    },
+    {
+      "name": "collision-guard",
+      "source": {
+        "source": "git-subdir",
+        "url": "nateherkai/claude-code-mods",
+        "path": "collision-guard",
+        "sha": "33a936f2ec6bbfea5a30a1a4d71d992487a5c769"
+      },
+      "description": "Asks before Claude edits a file another open chat changed in the last 30 minutes, and offers to move the work to a worktree. By Nate Herk, pinned to a reviewed commit."
     }
   ],
   "description": "Mods of Claude Code written for this setup"

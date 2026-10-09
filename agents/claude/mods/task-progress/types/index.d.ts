@@ -1,10 +1,14 @@
 export type StepStatus = 'pending' | 'active' | 'done'
 
-export type Step = { label: string; status: StepStatus }
+export type StepSize = 'S' | 'M' | 'L'
+
+export type Step = { label: string; status: StepStatus; size: StepSize }
 
 export type Plan = {
   title: string
   steps: Step[]
+  /** How many steps the first version of the plan had, to tell when the plan grew. */
+  firstTotal: number
   startedAt: number
   finishedAt: number | null
 }

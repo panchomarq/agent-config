@@ -144,11 +144,15 @@ a la statusline, con el progreso de la tarea de esa terminal:
 ```
 Migrar auth a JWT ◆
 ████████⣿⣿⣿⣿ 67%
-4/6 · Corriendo tests · 2m 14s
+4/6 · Corriendo tests · 2m 14s · ~3m
 ```
 
 El porcentaje sale de los pasos que Claude declara con la herramienta
-`mcp__task-progress__plan`, que el mod registra y explica en el system prompt. Es una sola
+`mcp__task-progress__plan`, que el mod registra y explica en el system prompt. Cada paso lleva
+un tamaño S, M o L que pesa 1, 2 o 3 en el porcentaje. Con dos pasos terminados aparece el
+tiempo que queda (`~3m`), calculado al ritmo de esa misma tarea, y si el plan crece respecto a
+su primera versión el conteo lo dice (`4/8 (+2)`). `/progress` imprime el plan completo con
+tamaños, y `/goal` le pide a Claude que declare el plan antes de empezar. Es una sola
 tarea por sesión: los subagentes no la modifican. Sin plan muestra las herramientas usadas y el
 tiempo del turno (`sin plan de pasos ◇`), y si el turno termina con pasos pendientes queda en
 ámbar. El bloque se achica con el ancho de la terminal para no tocar la statusline.
@@ -156,6 +160,17 @@ tiempo del turno (`sin plan de pasos ◇`), y si el turno termina con pasos pend
 Se instala con `./install.sh` (el repo es el marketplace `agent-config`). Para desarrollarlo:
 `claude --plugin-dir agents/claude/mods/task-progress`; las pruebas corren con
 `claude plugin test agents/claude/mods/task-progress`.
+
+## Mods de terceros
+
+El marketplace `agent-config` también sirve mods ajenos, cada uno fijado con `sha` al commit
+que se revisó, así que nada cambia en las máquinas hasta que se sube ese `sha` a mano (después
+de leer el diff y pasar `claude plugin validate`):
+
+| Mod | Origen | Qué hace |
+|---|---|---|
+| `blast-radius` | [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground/tree/main/claude-code/mods/blast-radius) | Frena `rm -rf`, `git reset --hard`, `git clean`, force push y migraciones, muestra qué cambiarían y espera Proceed / Cancel |
+| `collision-guard` | [nateherkai/claude-code-mods](https://github.com/nateherkai/claude-code-mods/tree/main/collision-guard) | Pregunta antes de editar un archivo que otro chat abierto cambió en los últimos 30 min y ofrece pasar el trabajo a un worktree (`/guard` para ver estado o apagarlo) |
 
 ## Estándares que sigue
 
