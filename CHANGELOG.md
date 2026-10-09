@@ -5,6 +5,22 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+### Added
+
+- `agents/claude/CLAUDE.md`: regla nueva, las flotas de agentes tienen que caber en la ventana
+  de uso. Preparar los insumos antes de repartir el trabajo, poner tope de consultas en cada
+  consigna, hacer que cada agente escriba su informe a medida que avanza y pueda retomarlo, y
+  revisar si los workflows interrumpidos se relanzaron solos después de un reinicio del límite.
+
+### Changed
+
+- Ruteo de modelos en Claude Code (`agents/claude/CLAUDE.md`): el modelo principal piensa y los
+  modelos más baratos juntan información. La investigación web y de documentación, el
+  relevamiento de un repo o de datos y la extracción de hechos de archivos pasan a subagentes
+  en Sonnet, y las búsquedas puntuales a Haiku, con esfuerzo `high`. Vale también con Ultracode
+  activo o con esfuerzo máximo. Planificación, diseño, síntesis y la verificación de lo que
+  sostiene una decisión siguen en el modelo principal.
+
 ## [1.2.0] - 2026-10-07
 
 ### Added
