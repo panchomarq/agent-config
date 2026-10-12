@@ -5,6 +5,24 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-12
+
+### Added
+
+- Skills de Google Cloud, copiadas de la colección oficial `google/skills` (Apache-2.0) en el
+  commit `a39a861`: `gcloud` (resguardos para comandos `gcloud`), `google-cloud-recipe-auth`
+  (autenticación e IAM), `google-cloud-recipe-onboarding` (primer proyecto y facturación),
+  `cloud-run-basics` y `bigquery-basics`.
+- Skill `google-tag-manager`, copiada de `thatrebeccarae/claude-marketing` (MIT) en el commit
+  `a8a63ec`: auditoría de contenedores, arquitectura de tags y triggers, Consent Mode v2,
+  server-side y depuración. Solo asesora: no usa la API de Tag Manager. Se le quitaron las
+  secciones `Install` y `Related Tools`, que apuntaban a una skill y a un agente que este repo
+  no trae.
+- `docs/inventory.md`: tabla «Skills de terceros» con el origen, el commit, la licencia y los
+  cambios locales de cada copia, y la lista de lo evaluado y no incluido con su motivo.
+- `tests/check_skills.sh`, incluido en `tests/run.sh`: cada carpeta de `skills/` tiene un
+  `SKILL.md` con un `name` igual al de la carpeta y una `description`.
+
 ## [1.2.0] - 2026-10-07
 
 ### Added
