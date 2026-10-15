@@ -3,8 +3,8 @@ import type { On, Register, Timer } from 'claude-code'
 
 import type { Plan, Turn } from '../types'
 
-import { describeFooter } from './footer'
-import { applyDraft, countDone, currentStep, parsePlan } from './plan'
+import { describeFooter, formatElapsed, formatLeft, stepCount } from './footer'
+import { applyDraft, countDone, currentStep, estimateLeft, parsePlan, weightedPercent } from './plan'
 import type { PlanDraft } from './plan'
 
 const TOOL = 'mcp__task-progress__plan'
@@ -30,6 +30,11 @@ const PLAN_TOOL = {
           properties: {
             label: { type: 'string', description: 'What the step does, in 2 to 5 words.' },
             status: { type: 'string', enum: ['pending', 'active', 'done'] },
+            size: {
+              type: 'string',
+              enum: ['S', 'M', 'L'],
+              description: 'How much work the step is: S small, M medium, L large. Defaults to M.',
+            },
           },
           required: ['label', 'status'],
         },
@@ -45,7 +50,8 @@ The user follows your work on a progress indicator that only the ${TOOL} tool fe
 keeping it current is part of the task.
 - When a request takes three or more steps, call it first, before any other tool: a short title \
 and every step in order (2 to 5 words each, in the user's language), the first one "active". \
-This holds when the user already listed the steps too.
+Size each step S, M or L by how much work it is: the percent and the time left weigh them 1, 2 \
+and 3. This holds when the user already listed the steps too.
 - Each time a step ends, call it again with the full list: finished steps "done", the one you \
 are starting "active". Send it in the same message as that step's first tool call, never as a \
 message of its own.
@@ -60,6 +66,36 @@ const NUDGE_AFTER_TOOLS = 3
 const NUDGE =
   `No step plan is on record for this task. If it takes three or more steps, declare them ` +
   `now with ${TOOL}, the finished ones as "done"; otherwise carry on.`
+
+// Sent with /goal, whose loop can run for a long time without the person watching each turn.
+const GOAL_NOTE =
+  `A /goal just started. Before any other tool, declare its plan with ${TOOL}: the goal as the ` +
+  `title, every step sized S, M or L. Keep it current until the goal is met.`
+const STOP_WORDS = new Set(['', 'clear', 'stop', 'off', 'cancel'])
+
+const STEP_ICONS = { done: '✔', active: '◆', pending: '○' } as const
+
+/** The whole plan as the /progress command prints it. */
+function describePlan(current: Plan | null, now: number): string {
+  if (current === null) {
+    return 'Sin plan de pasos en curso.'
+  }
+
+  const left = estimateLeft(current, now)
+  const took = formatElapsed((current.finishedAt ?? now) - current.startedAt)
+  const timing = left === null ? took : `${took} · quedan ~${formatLeft(left)}`
+  const grew =
+    current.steps.length > current.firstTotal
+      ? [`El plan creció de ${current.firstTotal} a ${current.steps.length} pasos.`]
+      : []
+  const steps = current.steps.map(step => `${STEP_ICONS[step.status]} ${step.size}  ${step.label}`)
+
+  return [
+    `${current.title} · ${stepCount(current)} · ${weightedPercent(current.steps)}% · ${timing}`,
+    ...grew,
+    ...steps,
+  ].join('\n')
+}
 
 const dropFinished = (current: Plan | null): Plan | null =>
   current !== null && current.finishedAt !== null ? null : current
@@ -86,7 +122,31 @@ function servePlanTool(on: On): void {
     // A turn cut short by a crash or a reload never reported its end.
     await update($, turn, () => null)
 
+    try {
+      await $.command.register({
+        name: 'progress',
+        description: 'Task progress: every step of the plan, its size and the time left',
+        immediate: true,
+      })
+    } catch {
+      // Another command took the name; the footer still shows the plan.
+    }
+
     return next(e)
+  })
+
+  on('command.run', { command: 'progress' }, async $ => ({
+    text: describePlan(await read($, plan), await $.clock.now()),
+  }))
+
+  on('command.run', { command: 'goal' }, async ($, e, next) => {
+    const ran = await next(e)
+
+    if (STOP_WORDS.has(e.args.trim().toLowerCase())) {
+      return ran
+    }
+
+    return { ...ran, context: [...(ran.context ?? []), GOAL_NOTE] }
   })
 
   on('prompt.compose', async ($, e, next) => {
