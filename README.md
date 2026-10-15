@@ -16,7 +16,7 @@ agent-config/
 │   ├── obsidian-vault/       cómo leer/escribir el vault + plantillas de notas
 │   └── new-project/          estructura estándar de repos + plantilla
 ├── agents/
-│   ├── claude/               CLAUDE.md, settings.json, statusline.sh, comandos
+│   ├── claude/               CLAUDE.md, settings.json, statusline.sh, comandos, mods/
 │   └── opencode/             opencode.json (modelos locales vía Ollama)
 ├── bin/vault-write           registra cambios en el changelog del vault
 ├── config.env.example        plantilla de la config local de cada máquina
@@ -136,6 +136,27 @@ Las barras y sus porcentajes van en verde con la mitad o más disponible, en ám
 de la mitad y en rojo por debajo de un quinto. Son colores de 24 bits, así que no dependen de
 la paleta del tema del terminal.
 
+## Mod de progreso de Claude Code
+
+`agents/claude/mods/task-progress` dibuja un bloque de tres filas a la derecha del pie, junto
+a la statusline, con el progreso de la tarea de esa terminal:
+
+```
+Migrar auth a JWT ◆
+████████⣿⣿⣿⣿ 67%
+4/6 · Corriendo tests · 2m 14s
+```
+
+El porcentaje sale de los pasos que Claude declara con la herramienta
+`mcp__task-progress__plan`, que el mod registra y explica en el system prompt. Es una sola
+tarea por sesión: los subagentes no la modifican. Sin plan muestra las herramientas usadas y el
+tiempo del turno (`sin plan de pasos ◇`), y si el turno termina con pasos pendientes queda en
+ámbar. El bloque se achica con el ancho de la terminal para no tocar la statusline.
+
+Se instala con `./install.sh` (el repo es el marketplace `agent-config`). Para desarrollarlo:
+`claude --plugin-dir agents/claude/mods/task-progress`; las pruebas corren con
+`claude plugin test agents/claude/mods/task-progress`.
+
 ## Navegador de Playwright
 
 El plugin `playwright` corre el navegador oculto (`PLAYWRIGHT_MCP_HEADLESS`) y con un perfil
@@ -167,7 +188,7 @@ aplica a las sesiones abiertas en `~`. El cambio vale para las sesiones nuevas.
 ## Desarrollo
 
 ```bash
-tests/run.sh    # shellcheck, ruff, JSON, inventario y tests (instalador, statusline, vault-write)
+tests/run.sh    # shellcheck, ruff, JSON, inventario, mods y tests (instalador, statusline, vault-write)
 ```
 
 El CI corre lo mismo en cada PR.
