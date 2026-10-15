@@ -5,6 +5,25 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-15
+
+### Changed
+
+- `task-progress` 0.3.0: el bloque del pie pasa a ser una columna al costado de la conversación.
+  Mientras corren subagentes o agentes de un workflow, la columna los lista con su tiempo, sus
+  herramientas y su última acción. Sin agentes muestra la tarea, lo que sigue en el roadmap del
+  proyecto (la nota del vault que corresponde al repo) y los últimos tres merges. La columna
+  se abre sola en pantalla completa desde 144 columnas. En pestañas más angostas la misma
+  información va en un header de dos filas arriba del cuadro de texto. `/columna` la abre o la
+  cierra.
+
+### Fixed
+
+- `task-progress`: el `turn.start` de un subagente reiniciaba el reloj y el conteo de
+  herramientas del turno principal.
+- `task-progress`: si `/progress` no se podía registrar, el error se descartaba sin aviso. Ahora
+  queda en el log de la sesión.
+
 ## [1.7.0] - 2026-10-15
 
 ### Added

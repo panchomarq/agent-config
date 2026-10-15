@@ -15,8 +15,42 @@ export type Plan = {
 
 export type Turn = { startedAt: number; tools: number }
 
+/** A subagent, teammate or workflow agent of this session, as the column lists it. */
+export type Agent = {
+  id: string
+  label: string
+  type: string
+  startedAt: number
+  finishedAt: number | null
+  tools: number
+  lastAction: string
+}
+
+/** What the column knows about the project the session works in. */
+export type Project = {
+  /** The repository's folder name, or the working directory's. */
+  name: string
+  /** The vault note the roadmap comes from; null when no note matches the project. */
+  note: string | null
+  done: number
+  total: number
+  /** The first unchecked roadmap items, in the note's order. */
+  next: string[]
+  /** The last changes merged into the repository, newest first. */
+  recent: string[]
+  /** Why the roadmap could not be read, in the person's words; null when it was. */
+  problem: string | null
+}
+
 declare module 'claude-code' {
   interface PluginState {
-    'task-progress': { plan: Plan | null; turn: Turn | null }
+    'task-progress': {
+      plan: Plan | null
+      turn: Turn | null
+      agents: Agent[]
+      project: Project | null
+      /** True once the person closed the column, so it is not opened again unasked. */
+      isDismissed: boolean
+    }
   }
 }
