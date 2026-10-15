@@ -37,7 +37,8 @@ Cómo lo consume cada agente:
 
 Todo son **symlinks al repo**, salvo los JSON (`settings.json`, `opencode.json`), que se
 **fusionan** porque los agentes los reescriben: las claves del repo ganan y las que solo
-existen en la máquina (por ejemplo, permisos locales) se conservan.
+existen en la máquina se conservan. Las listas de permisos (`permissions.allow`, `ask` y
+`deny`) se unen: quedan las reglas de la máquina y se suman las del repo.
 
 ## Instalación en una máquina nueva
 
@@ -101,7 +102,9 @@ Dónde va cada cosa:
 | Una regla para todos los agentes y proyectos | `global/AGENTS.md` |
 | Un procedimiento reutilizable (con archivos de apoyo) | `skills/<nombre>/SKILL.md` |
 | Algo solo de Claude Code | `agents/claude/CLAUDE.md` o `settings.json` |
-| Un permiso o ajuste de una sola máquina | `~/.claude/settings.local.json` (fuera del repo) |
+| Un permiso para todos los proyectos y máquinas | `permissions` en `agents/claude/settings.json` |
+| Un permiso o ajuste de una sola máquina | `~/.claude/settings.json` (fuera del repo; el instalador conserva lo que el repo no define) |
+| Un permiso de un solo proyecto | `.claude/settings.local.json` en ese proyecto |
 | Datos, estado de proyectos, hechos personales | Vault de Obsidian o la memoria del agente (fuera del repo) |
 
 Para **dejar de usar** algo: bórralo del repo (el instalador elimina sus symlinks en cada
