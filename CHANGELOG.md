@@ -5,6 +5,16 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-15
+
+### Changed
+
+- `global/AGENTS.md`: los PR se mergean en el orden en que se abren, sin conflictos y sin
+  avisar entre un merge y otro. Antes de abrir un PR se simula el merge de los PR abiertos en
+  orden y después el nuevo; si choca con uno anterior que sigue abierto, la rama nueva parte
+  de esa rama o la incluye y resuelve el conflicto. Cuando un PR anterior recibe commits, se
+  mergea en las ramas siguientes. Todos siguen apuntando a `main`.
+
 ## [1.8.0] - 2026-10-15
 
 ### Changed
