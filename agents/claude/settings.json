@@ -1,7 +1,34 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(git push * main*)",
+      "Bash(git push * HEAD:main*)",
+      "Bash(git push *:main*)",
+      "Bash(git push * refs/heads/main*)",
+      "Bash(git push *:refs/heads/main*)",
+      "Bash(git push --force*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f*)",
+      "Bash(git push * +*)",
+      "Bash(git push --mirror*)",
+      "Bash(git push * --mirror*)",
+      "Bash(git push --all*)",
+      "Bash(git push * --all*)",
+      "Bash(git push)",
+      "Bash(git push origin)",
+      "Bash(git push -u origin)",
+      "Bash(git push * HEAD)"
+    ]
+  },
+  "env": {
+    "PLAYWRIGHT_MCP_HEADLESS": "true",
+    "PLAYWRIGHT_MCP_ISOLATED": "true"
   },
   "model": "opus[1m]",
   "effortLevel": "xhigh",
