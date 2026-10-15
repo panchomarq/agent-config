@@ -5,6 +5,20 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-15
+
+### Added
+
+- Playwright (plugin de Claude Code): el navegador corre oculto y con un perfil temporal por
+  sesión, con `PLAYWRIGHT_MCP_HEADLESS` y `PLAYWRIGHT_MCP_ISOLATED` en `env` de
+  `agents/claude/settings.json`. Varias sesiones abiertas ya no abren ventanas en el escritorio
+  ni fallan con "Browser is already in use" por compartir perfil.
+- README: cómo indicar el navegador instalado en una máquina sin Google Chrome
+  (`env.PLAYWRIGHT_MCP_EXECUTABLE_PATH` en `~/.claude/settings.json`). Sin eso Playwright
+  falla con "Chromium distribution 'chrome' is not found".
+- `tests/install_test.sh`: el instalador conserva la ruta del navegador de la máquina dentro
+  de `env` y aplica los valores del repo.
+
 ## [1.2.0] - 2026-10-07
 
 ### Added
