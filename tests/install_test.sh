@@ -23,6 +23,54 @@ run_install() {
   env -i HOME="$SANDBOX/home" PATH="/usr/bin:/bin" "$REPO/install.sh" --no-plugins "$@"
 }
 
+# A stand-in for the claude CLI: it records each call in $FAKE/calls, lists the marketplaces
+# the repo declares as already added and the plugins in $FAKE/plugins as installed, fails to
+# install the ids listed in $FAKE/broken, and bumps a plugin to 2.0.0 when it updates one.
+fake_claude() {
+  FAKE="$SANDBOX/fake"
+  mkdir -p "$FAKE/bin"
+  : >"$FAKE/calls"
+  : >"$FAKE/broken"
+  jq '[.extraKnownMarketplaces // {} | keys[] | {name: .}]' "$REPO/agents/claude/settings.json" \
+    >"$FAKE/marketplaces"
+  echo '[]' >"$FAKE/plugins"
+  cat >"$FAKE/bin/claude" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$FAKE/calls"
+id="${*: -1}"
+case "$*" in
+  "plugin marketplace list --json") cat "$FAKE/marketplaces" ;;
+  "plugin list --json") cat "$FAKE/plugins" ;;
+  "plugin install --scope user "*)
+    if grep -qxF "$id" "$FAKE/broken"; then
+      echo "Failed to install plugin \"$id\"" >&2
+      exit 1
+    fi
+    ;;
+  "plugin update "*)
+    jq --arg id "$id" 'map(if .id == $id then .version = "2.0.0" else . end)' "$FAKE/plugins" \
+      >"$FAKE/plugins.new"
+    mv "$FAKE/plugins.new" "$FAKE/plugins"
+    ;;
+esac
+SH
+  chmod +x "$FAKE/bin/claude"
+}
+
+run_install_with_plugins() {
+  env -i HOME="$SANDBOX/home" PATH="$FAKE/bin:/usr/bin:/bin" FAKE="$FAKE" "$REPO/install.sh" "$@"
+}
+
+enabled_plugins() {
+  jq -r '.enabledPlugins | to_entries[] | select(.value) | .key' "$REPO/agents/claude/settings.json"
+}
+
+# Every enabled plugin as installed at 1.0.0.
+mark_all_installed() {
+  enabled_plugins | jq -R '{id: ., version: "1.0.0"}' | jq -s . >"$FAKE/plugins"
+}
+
 fail() {
   printf '    FAIL: %s\n' "$*"
   FAILURES=$((FAILURES + 1))
@@ -182,6 +230,43 @@ JSON
   assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_EXECUTABLE_PATH "$s")" "/opt/browser"
   assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_HEADLESS "$s")" "true"
   assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_ISOLATED "$s")" "true"
+}
+
+test_a_plugin_that_fails_to_install_does_not_stop_the_rest() {
+  fake_claude
+  echo "blast-radius@agent-config" >"$FAKE/broken"
+  local out="$SANDBOX/out" id
+  if run_install_with_plugins >"$out" 2>&1; then fail "a failed plugin install should exit 1"; fi
+  for id in $(enabled_plugins); do
+    grep -qxF "plugin install --scope user $id" "$FAKE/calls" || fail "$id was not installed"
+  done
+  grep -q "plugins that failed (see the errors above): blast-radius@agent-config$" "$out" ||
+    fail "the failed plugin should be named at the end"
+}
+
+test_installed_repo_mods_are_updated_and_others_left_alone() {
+  fake_claude
+  mark_all_installed
+  local out="$SANDBOX/out"
+  run_install_with_plugins >"$out" 2>&1 || fail "install with every plugin present should pass"
+  assert_eq "$(grep -c '^plugin marketplace update agent-config$' "$FAKE/calls")" "1"
+  grep -qxF "plugin update task-progress@agent-config" "$FAKE/calls" ||
+    fail "task-progress should be updated"
+  if grep -q '^plugin update .*@claude-plugins-official$' "$FAKE/calls"; then
+    fail "plugins from other marketplaces should not be updated"
+  fi
+  if grep -q '^plugin install ' "$FAKE/calls"; then fail "nothing should be installed again"; fi
+  grep -qF "update plugin task-progress@agent-config (1.0.0 → 2.0.0)" "$out" ||
+    fail "the update should be reported with both versions"
+}
+
+test_check_mode_leaves_installed_plugins_alone() {
+  fake_claude
+  mark_all_installed
+  run_install_with_plugins --check >/dev/null 2>&1 || true
+  if grep -q '^plugin update \|^plugin marketplace update ' "$FAKE/calls"; then
+    fail "--check must not update plugins"
+  fi
 }
 
 test_invalid_settings_json_aborts_untouched() {

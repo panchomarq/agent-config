@@ -5,6 +5,19 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-10-15
+
+### Fixed
+
+- `blast-radius` y `collision-guard` no se instalaban en una máquina sin clave SSH para GitHub:
+  el marketplace los declaraba como `owner/repo` y Claude Code los clonaba por SSH. Ahora sus
+  fuentes son URLs HTTPS, fijadas a los mismos commits.
+- `install.sh` cortaba en el primer plugin que fallaba y dejaba sin instalar los siguientes.
+  Ahora sigue con los demás y al final sale con código 1 nombrando los que fallaron.
+- `install.sh` no actualizaba un plugin ya instalado, así que `task-progress` se quedaba en la
+  versión de la primera instalación. Ahora actualiza los mods del marketplace `agent-config`
+  que ya están instalados e informa el cambio de versión.
+
 ## [1.8.0] - 2026-10-15
 
 ### Changed
