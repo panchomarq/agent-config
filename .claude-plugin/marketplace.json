@@ -13,7 +13,7 @@
       "name": "blast-radius",
       "source": {
         "source": "git-subdir",
-        "url": "anthropics/claude-code-playground",
+        "url": "https://github.com/anthropics/claude-code-playground.git",
         "path": "claude-code/mods/blast-radius",
         "sha": "569c5283d9a0a7ee7938df85bb32e4f48cbb8c86"
       },
@@ -23,7 +23,7 @@
       "name": "collision-guard",
       "source": {
         "source": "git-subdir",
-        "url": "nateherkai/claude-code-mods",
+        "url": "https://github.com/nateherkai/claude-code-mods.git",
         "path": "collision-guard",
         "sha": "33a936f2ec6bbfea5a30a1a4d71d992487a5c769"
       },

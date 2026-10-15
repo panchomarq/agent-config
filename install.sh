@@ -13,6 +13,8 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 CHECK=0
 PLUGINS=1
 DRIFT=0
+FAILED_PLUGINS=()
+REPO_MARKETPLACE_FRESH=0
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-config"
 RECOMMENDED_TOOLS=(rg fd ast-grep shellcheck shfmt actionlint zizmor prek wt trash uv)
 
@@ -201,10 +203,37 @@ install_plugins() {
 
   installed="$(claude plugin list --json | jq -r '.[].id')"
   while read -r id; do
-    grep -qxF "$id" <<<"$installed" && continue
+    if grep -qxF "$id" <<<"$installed"; then
+      [[ "$id" == *@agent-config ]] && update_repo_plugin "$id"
+      continue
+    fi
     pending "install plugin $id" || continue
-    claude plugin install --scope user "$id"
+    claude plugin install --scope user "$id" || FAILED_PLUGINS+=("$id")
   done < <(jq -r '.enabledPlugins // {} | to_entries[] | select(.value) | .key' "$settings")
+}
+
+plugin_version() {
+  claude plugin list --json | jq -r --arg id "$1" '.[] | select(.id == $id) | .version'
+}
+
+# This repo's own mods move with the repo: an installed one is brought up to the commit the
+# marketplace now serves. --check can't tell without fetching, so it leaves them alone.
+update_repo_plugin() {
+  local id="$1" before after
+  ((CHECK)) && return 0
+  if ((!REPO_MARKETPLACE_FRESH)); then
+    claude plugin marketplace update agent-config >/dev/null || FAILED_PLUGINS+=("agent-config")
+    REPO_MARKETPLACE_FRESH=1
+  fi
+  before="$(plugin_version "$id")"
+  if ! claude plugin update "$id" >/dev/null; then
+    FAILED_PLUGINS+=("$id")
+    return 0
+  fi
+  after="$(plugin_version "$id")"
+  [[ "$before" == "$after" ]] && return 0
+  DRIFT=1
+  log "  → update plugin $id ($before → $after)"
 }
 
 report_tools() {
@@ -229,6 +258,10 @@ main() {
   install_plugins
   report_tools
   log ""
+  if ((${#FAILED_PLUGINS[@]})); then
+    log "Claude Code plugins that failed (see the errors above): ${FAILED_PLUGINS[*]}"
+    exit 1
+  fi
   if ((CHECK && DRIFT)); then
     log "Out of date: run ./install.sh to apply."
     exit 1

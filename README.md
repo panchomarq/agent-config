@@ -86,6 +86,12 @@ git pull
 hay diferencias). Los archivos que el instalador reemplaza se guardan como
 `<archivo>.bak-<fecha>`.
 
+El instalador agrega los plugins activados que falten y actualiza los mods del marketplace
+`agent-config` que ya estén instalados (`--check` no los actualiza: para saber si hay una
+versión nueva tendría que traerla). Si un plugin no se puede instalar o actualizar, sigue con
+los demás y al final sale con código 1 nombrando los que fallaron. Las sesiones abiertas toman
+los cambios al reiniciarse o con `/reload-plugins`.
+
 ## Cambiar la configuración
 
 Como `~/.claude/CLAUDE.md`, las skills, etc. son symlinks, **editarlos es editar el repo**.
