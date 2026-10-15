@@ -139,26 +139,46 @@ Las barras y sus porcentajes van en verde con la mitad o más disponible, en ám
 de la mitad y en rojo por debajo de un quinto. Son colores de 24 bits, así que no dependen de
 la paleta del tema del terminal.
 
-## Mod de progreso de Claude Code
+## Columna de sesión de Claude Code
 
-`agents/claude/mods/task-progress` dibuja un bloque de tres filas a la derecha del pie, junto
-a la statusline, con el progreso de la tarea de esa terminal:
+`agents/claude/mods/task-progress` muestra, al costado de la conversación de cada pestaña, lo
+que está pasando en esa sesión. Mientras corren subagentes o agentes de un workflow, la columna
+los lista: cuánto llevan, cuántas herramientas usaron y su última acción. Diez segundos después
+de que termina el último, vuelve al tablero del proyecto:
 
 ```
-Migrar auth a JWT ◆
-████████⣿⣿⣿⣿ 67%
-4/6 · Corriendo tests · 2m 14s · ~3m
+mi-proyecto                 Mi Proyecto - Roadmap
+
+AHORA
+◆ Migrar auth a JWT                          4/6
+  ████████⣿⣿⣿⣿ 67%
+  Corriendo tests · 2m 14s · ~1m
+
+SIGUE                               12/30 hechas
+○ Confirmar el formato de fechas
+○ Revisar el PR de pagos
+
+LO ÚLTIMO
+✔ #41 group the menu
 ```
 
-El porcentaje sale de los pasos que Claude declara con la herramienta
-`mcp__task-progress__plan`, que el mod registra y explica en el system prompt. Cada paso lleva
-un tamaño S, M o L que pesa 1, 2 o 3 en el porcentaje. Con dos pasos terminados aparece el
-tiempo que queda (`~3m`), calculado al ritmo de esa misma tarea, y si el plan crece respecto a
-su primera versión el conteo lo dice (`4/8 (+2)`). `/progress` imprime el plan completo con
-tamaños, y `/goal` le pide a Claude que declare el plan antes de empezar. Es una sola
-tarea por sesión: los subagentes no la modifican. Sin plan muestra las herramientas usadas y el
-tiempo del turno (`sin plan de pasos ◇`), y si el turno termina con pasos pendientes queda en
-ámbar. El bloque se achica con el ancho de la terminal para no tocar la statusline.
+- **Ahora** sale de los pasos que Claude declara con la herramienta `mcp__task-progress__plan`,
+  que el mod registra y explica en el system prompt. Cada paso lleva un tamaño S, M o L que
+  pesa 1, 2 o 3 en el porcentaje. Con dos pasos terminados aparece el tiempo que queda (`~1m`),
+  y si el plan crece el conteo lo dice (`4/8 (+2)`). Si el turno termina con pasos pendientes
+  queda en ámbar (`te necesita`). `/progress` imprime el plan completo y `/goal` le pide a
+  Claude que lo declare antes de empezar.
+- **Sigue** sale de la nota del proyecto en el vault (`vault-write --where` dice dónde está):
+  las primeras casillas sin marcar de la primera sección `## ` que todavía tiene alguna. La nota
+  se busca en `1. Projects/` por el nombre de la carpeta del repo, y si no aparece, por una
+  fila `| Repo |` que nombre la ruta del repo.
+- **Lo último** son los últimos tres merges de la rama principal del repo.
+
+La columna solo puede ir al costado en el modo de pantalla completa de la terminal, que es el
+de por defecto fuera de tmux. Se abre sola desde 144 columnas. En una pestaña más angosta, la
+misma información va en un header de dos filas arriba del cuadro de texto, y `/columna` acopla
+la columna desde 110 columnas. `/columna` también la cierra, y queda cerrada hasta que se vuelva
+a pedir.
 
 Se instala con `./install.sh` (el repo es el marketplace `agent-config`). Para desarrollarlo:
 `claude --plugin-dir agents/claude/mods/task-progress`; las pruebas corren con

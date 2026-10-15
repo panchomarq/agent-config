@@ -1,7 +1,9 @@
 {
   "name": "task-progress",
-  "version": "0.2.0",
-  "description": "Shows the progress of the task this session is working on at the right of the footer",
-  "author": { "name": "agent-config" },
+  "version": "0.3.0",
+  "description": "Shows the session's agents, task and project roadmap in a column beside the conversation, or in a header above the prompt",
+  "author": {
+    "name": "agent-config"
+  },
   "types": "./types/index.d.ts"
 }

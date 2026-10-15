@@ -7,7 +7,7 @@
     {
       "name": "task-progress",
       "source": "./agents/claude/mods/task-progress",
-      "description": "Shows the progress of the task the session is working on at the right of the footer"
+      "description": "Shows the session's agents, task and project roadmap in a column beside the conversation, or in a header above the prompt"
     },
     {
       "name": "blast-radius",
