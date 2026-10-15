@@ -85,7 +85,16 @@ merge_json() {
     return 0
   fi
   jq empty "$dst" 2>/dev/null || die "$dst is not valid JSON; fix or move it, then re-run"
-  merged="$(jq -S -s '.[0] * .[1]' "$dst" "$src")"
+  # Repo keys win, except the permission lists: those are united, the machine's rules first,
+  # so a shared rule never erases one that only this machine has.
+  merged="$(jq -S -s '
+    . as [$local, $repo]
+    | reduce ("allow", "ask", "deny") as $list ($local * $repo;
+        (($local.permissions[$list]? // []) as $mine
+         | ($repo.permissions[$list]? // []) as $shared
+         | $mine + ($shared - $mine)) as $rules
+        | if ($rules | length) > 0 then .permissions[$list] = $rules else . end)
+  ' "$dst" "$src")"
   [[ "$merged" == "$(jq -S . "$dst")" ]] && return 0
   pending "merge $src into $dst" || return 0
   cp "$dst" "$dst.bak-$STAMP"
