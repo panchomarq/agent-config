@@ -50,12 +50,19 @@ Skills externas que **no** gestiona este repo: `omarchy` (la instala Omarchy en
 | `playwright@claude-plugins-official` | activo | 2026-05-25 | Automatización de browser |
 | `vercel@claude-plugins-official` | activo | 2026-05-25 | Deploys y guías de Vercel (el más usado) |
 | `compound-engineering@compound-engineering-plugin` | activo | 2026-05-25 | Flujo brainstorm → plan → work → review |
-| `task-progress@agent-config` | activo | 2026-10-07 | Mod propio (`agents/claude/mods/task-progress`): progreso de la tarea junto a la statusline |
+| `task-progress@agent-config` | activo | 2026-10-07 | Mod propio (`agents/claude/mods/task-progress`): progreso de la tarea junto a la statusline; desde 2026-10-09 con tamaños S/M/L, tiempo restante, crecimiento del plan, `/progress` y aviso con `/goal` (ideas de Goal Meter) |
+| `blast-radius@agent-config` | activo | 2026-10-09 | Mod de Anthropic (`claude-code-playground`), fijado por `sha`: frena comandos destructivos con `defaultMode: auto` |
+| `collision-guard@agent-config` | activo | 2026-10-09 | Mod de Nate Herk, fijado por `sha`: evita que dos chats editen el mismo archivo |
 | `github@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso en 130 arranques; `gh` cubre lo mismo |
 | `skill-creator@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso |
 | `context7@claude-plugins-official` | desactivado | 2026-08-05 | Sin uso |
 | `frontend-design@claude-plugins-official` | desactivado | 2026-08-05 | Un solo uso |
 | `chrome-devtools-mcp@claude-plugins-official` | desactivado | 2026-08-05 | Se superpone con `playwright` |
+
+Evaluados y no adoptados (2026-10-09): `goal-meter` (choca con `task-progress`: otra herramienta
+de plan y el mismo pie; se tomaron sus ideas), `token-weather` (repite la barra de contexto de la
+statusline), `replay-theater` (se superpone con `/diff`), `cache-keeper`, `recording-mode` y
+`next-steps`.
 
 ## Retirados
 

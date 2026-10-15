@@ -5,6 +5,25 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-15
+
+### Added
+
+- Mods `blast-radius` (Anthropic) y `collision-guard` (Nate Herk) en el marketplace
+  `agent-config`, como fuentes `git-subdir` fijadas al commit revisado, y activados en
+  `agents/claude/settings.json`. `blast-radius` frena `rm -rf`, `git reset --hard`, `git clean`,
+  force push y migraciones mostrando qué cambiarían; `collision-guard` pregunta antes de editar
+  un archivo que otro chat cambió hace menos de 30 minutos.
+- `task-progress` 0.2.0, con ideas de Goal Meter: pasos de tamaño S, M o L que pesan 1, 2 y 3
+  en el porcentaje; tiempo restante al ritmo de la tarea desde el segundo paso terminado;
+  conteo que marca cuánto creció el plan (`4/8 (+2)`); comando `/progress` con el plan
+  completo; y `/goal` pide declarar el plan antes de empezar.
+
+### Changed
+
+- `tests/check_inventory.sh` acepta plugins del marketplace que vienen de otro repositorio
+  siempre que estén fijados a un `sha` completo.
+
 ## [1.5.0] - 2026-10-15
 
 ### Added

@@ -1,6 +1,6 @@
 import type { Plan, Turn } from '../types'
 
-import { countDone, currentStep } from './plan'
+import { countDone, currentStep, estimateLeft, weightedPercent } from './plan'
 
 const GAUGE_CELLS = 12
 const PARTIAL_BLOCKS = ['', '▏', '▎', '▍', '▌', '▋', '▊', '▉'] as const
@@ -46,6 +46,25 @@ export function formatElapsed(ms: number): string {
   return `${total}s`
 }
 
+/** A rough time left: whole minutes are all an estimate is good for. */
+export function formatLeft(ms: number): string {
+  const minutes = Math.round(ms / 60_000)
+
+  if (minutes < 1) {
+    return '<1m'
+  }
+
+  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`
+}
+
+/** "4/6", or "4/8 (+2)" once the plan has grown past its first version. */
+export function stepCount(plan: Plan): string {
+  const count = `${countDone(plan.steps)}/${plan.steps.length}`
+  const grew = plan.steps.length - plan.firstTotal
+
+  return grew > 0 ? `${count} (+${grew})` : count
+}
+
 /** The status line's own gauge: whole blocks, one eighth-block partial, braille remainder. */
 export function gauge(percent: number): { filled: string; empty: string } {
   const eighths = Math.floor((percent * GAUGE_CELLS * 8) / 100)
@@ -59,8 +78,12 @@ export function gauge(percent: number): { filled: string; empty: string } {
 const truncate = (text: string, width: number): string =>
   text.length <= width ? text : `${text.slice(0, Math.max(width - 1, 0))}…`
 
-const fit = (room: number, full: string, short: string): string =>
-  full.length <= room ? full : truncate(short, room)
+/** The first candidate that fits the room, or the last one cut to it. */
+function fit(room: number, ...candidates: string[]): string {
+  const last = candidates[candidates.length - 1] ?? ''
+
+  return candidates.find(candidate => candidate.length <= room) ?? truncate(last, room)
+}
 
 function roomFor(columns: number | undefined): number {
   if (columns === undefined) {
@@ -72,7 +95,7 @@ function roomFor(columns: number | undefined): number {
 
 function planFooter(plan: Plan, turn: Turn | null, now: number, room: number): Footer {
   const count = `${countDone(plan.steps)}/${plan.steps.length}`
-  const percent = Math.round((countDone(plan.steps) * 100) / plan.steps.length)
+  const percent = weightedPercent(plan.steps)
   const base = {
     title: truncate(plan.title, room - 2),
     isMuted: false,
@@ -94,10 +117,13 @@ function planFooter(plan: Plan, turn: Turn | null, now: number, room: number): F
   }
 
   const elapsed = formatElapsed(now - plan.startedAt)
+  const left = estimateLeft(plan, now)
+  const time = left === null ? elapsed : `${elapsed} · ~${formatLeft(left)}`
   const step = currentStep(plan.steps)
-  const brief = `${count} · ${elapsed}`
-  const full = step === undefined ? brief : `${count} · ${step.label} · ${elapsed}`
-  const detail = fit(room, full, brief)
+  const grown = stepCount(plan)
+  const withStep = (counted: string) =>
+    step === undefined ? `${counted} · ${time}` : `${counted} · ${step.label} · ${time}`
+  const detail = fit(room, withStep(grown), withStep(count), `${count} · ${time}`, `${count} · ${elapsed}`)
 
   return { ...base, glyph: '◆', color: WORKING, detail, isDetailColored: false }
 }
