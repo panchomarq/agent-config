@@ -14,13 +14,15 @@ agent-config/
 ├── global/AGENTS.md          instrucciones para TODOS los agentes (fuente única)
 ├── skills/                   skills en formato estándar (SKILL.md)
 │   ├── obsidian-vault/       cómo leer/escribir el vault + plantillas de notas
-│   └── new-project/          estructura estándar de repos + plantilla
+│   ├── new-project/          estructura estándar de repos + plantilla
+│   └── …                     skills de terceros (Google Cloud, Tag Manager): ver el inventario
 ├── agents/
 │   ├── claude/               CLAUDE.md, settings.json, statusline.sh, comandos, mods/
 │   └── opencode/             opencode.json (modelos locales vía Ollama)
 ├── bin/vault-write           registra cambios en el changelog del vault
 ├── config.env.example        plantilla de la config local de cada máquina
 ├── docs/inventory.md         qué está activo, desactivado o retirado, y por qué
+├── docs/third-party-licenses/  licencias de las skills copiadas de terceros
 ├── install.sh                instalador / actualizador
 └── tests/                    tests del instalador, de la statusline y de vault-write
 ```
