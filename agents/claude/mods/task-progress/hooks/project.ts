@@ -3,6 +3,8 @@ import type { EngineInterface } from 'claude-code'
 import type { Project } from '../types'
 
 const PROJECTS_FOLDER = '1. Projects'
+// `1. Projects/<Context>/<Project>/`, plus one level of subfolders inside a project.
+const FOLDER_DEPTH = 3
 const NEXT_ITEMS = 4
 const RECENT_CHANGES = 3
 // Where the merges people see live: the remote's default branch, then the local main, then here.
@@ -13,7 +15,7 @@ const CONVENTIONAL = /^\w+(\([^)]*\))?!?:\s*/
 
 export const VAULT_UNAVAILABLE = 'vault no disponible'
 
-/** A note of the vault's projects folder; `key` names its project (a folder, or the title). */
+/** A note of the vault's projects folder; `key` names its project (its folder, or its title). */
 export type Note = { path: string; title: string; key: string }
 
 export type Roadmap = { done: number; total: number; next: string[] }
@@ -166,51 +168,57 @@ async function vaultRoot($: EngineInterface): Promise<string | null> {
   return where?.match(/^vault:\s*(.+)$/m)?.[1]?.trim() ?? null
 }
 
-async function listNotes($: EngineInterface, root: string): Promise<Note[]> {
-  const base = `${root}/${PROJECTS_FOLDER}`
-  const notes: Note[] = []
+/**
+ * The notes under `folder`, down to `FOLDER_DEPTH` levels. A folder that holds a note named like
+ * itself is a project, and every note inside it belongs to that project. Any other folder (the
+ * projects folder, a context such as `Personal/`) only groups: each of its own notes belongs to
+ * the project its title starts with.
+ */
+async function collectNotes(
+  $: EngineInterface,
+  folder: string,
+  project: string | null,
+  depth: number,
+): Promise<Note[]> {
+  const entries = await $.fs.list(folder)
+  const files = entries.filter(entry => entry.kind === 'file' && entry.name.endsWith('.md'))
+  const name = lastPart(folder)
+  const isProject = depth > 0 && files.some(file => file.name === `${name}.md`)
+  const key = project ?? (isProject ? name : null)
+  const notes: Note[] = files.map(file => {
+    const title = file.name.slice(0, -3)
 
-  for (const entry of await $.fs.list(base)) {
-    if (entry.kind === 'file' && entry.name.endsWith('.md')) {
-      const title = entry.name.slice(0, -3)
-      notes.push({ path: `${base}/${entry.name}`, title, key: title.split(' - ')[0] ?? title })
-    } else if (entry.kind === 'dir') {
-      const folder = `${base}/${entry.name}`
-      const inner = await $.fs.list(folder)
-      const files = inner.filter(file => file.kind === 'file' && file.name.endsWith('.md'))
-      notes.push(
-        ...files.map(file => ({
-          path: `${folder}/${file.name}`,
-          title: file.name.slice(0, -3),
-          key: entry.name,
-        })),
-      )
+    return { path: `${folder}/${file.name}`, title, key: key ?? title.split(' - ')[0] ?? title }
+  })
+
+  if (depth < FOLDER_DEPTH) {
+    for (const entry of entries) {
+      if (entry.kind === 'dir' && !entry.name.startsWith('.')) {
+        notes.push(...(await collectNotes($, `${folder}/${entry.name}`, key, depth + 1)))
+      }
     }
   }
 
   return notes
 }
 
-/** The project's note by name, else the note whose `| Repo |` row names the repository. */
+/**
+ * The note whose `| Repo |` row names the repository, else the project's note by name. The row
+ * comes first because names collide: two contexts can each hold a repository of the same name.
+ */
 async function findNote(
   $: EngineInterface,
   notes: readonly Note[],
   project: string,
   paths: readonly string[],
 ): Promise<Note | undefined> {
-  const byName = pickNote(notes, project)
-
-  if (byName !== undefined) {
-    return byName
-  }
-
   for (const note of notes.filter(candidate => candidate.title === candidate.key)) {
     if (mentionsRepo(await $.fs.read(note.path), paths)) {
       return pickNote(notes, note.key)
     }
   }
 
-  return undefined
+  return pickNote(notes, project)
 }
 
 async function pathsOf($: EngineInterface, path: string): Promise<string[]> {
@@ -234,7 +242,7 @@ export async function loadProject($: EngineInterface, cwd: string): Promise<Proj
   }
 
   try {
-    const notes = await listNotes($, root)
+    const notes = await collectNotes($, `${root}/${PROJECTS_FOLDER}`, null, 0)
     const note = await findNote($, notes, base.name, await pathsOf($, path))
 
     if (note === undefined) {

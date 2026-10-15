@@ -1,11 +1,11 @@
 ---
-tags: [proyecto, {tema}]
+tags: [proyecto, {contexto}, {tema}]
 date: {{date}}
 ---
 
 # {Nombre del proyecto}
 
-{Qué es y para qué existe, en 2-3 líneas.}
+{Qué es y para qué existe, en 2-3 líneas.} Parte de [[Proyectos {Contexto}]].
 
 | Campo | Valor |
 |---|---|

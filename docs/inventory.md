@@ -24,7 +24,7 @@ carpeta de config ya existe).
 
 | Skill | Estado | Para qué |
 |---|---|---|
-| `obsidian-vault` | activo | Convenciones del vault (PARA, español, frontmatter), status desde el vault, registro de cambios con `vault-write`. Trae las plantillas `Proyecto.md` y `PRD - Agent Task.md` |
+| `obsidian-vault` | activo | Convenciones del vault (PARA con carpetas por contexto y por proyecto, dónde va cada nota, español, frontmatter), status desde el vault, registro de cambios con `vault-write`. Trae las plantillas `Proyecto.md` y `PRD - Agent Task.md` |
 | `new-project` | activo | Estructura estándar de repo: `main`, README, `AGENTS.md` + `CLAUDE.md` → `@AGENTS.md`, `docs/{brainstorms,plans,design}`, nota en el vault |
 | `gcloud` | activo | Resguardos para comandos `gcloud`: `gcloud help` del comando exacto antes de proponerlo, `--dry-run` cuando existe, y autorización explícita para IAM, borrados, facturación y habilitar APIs |
 | `google-cloud-recipe-auth` | activo | Autenticación e IAM en Google Cloud: ADC, impersonación de cuentas de servicio en lugar de claves, IAP, Workload Identity Federation |

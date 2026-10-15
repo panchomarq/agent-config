@@ -5,6 +5,30 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-15
+
+### Changed
+
+- `obsidian-vault`: el vault es también la memoria de largo plazo de los agentes, y el skill dice
+  dónde va cada nota. Los proyectos viven en `1. Projects/<Contexto>/<Proyecto>/`, con
+  `<Proyecto>.md` como nota principal y un índice `Proyectos <Contexto>.md` por contexto; los
+  archivados van a `4. Archive/<Contexto>/<Proyecto>/`. Una tabla dice dónde va cada tipo de
+  nota. El primer tag es el tipo de nota y el segundo el contexto; no hay tags de estado. Antes
+  de trabajar en un proyecto se leen sus notas, cada decisión se anota con el motivo y lo
+  descartado, y al cerrar una sesión queda dónde retomar. Las plantillas llevan el tag de
+  contexto.
+- `new-project` crea la nota del proyecto en su carpeta de contexto y la suma al índice.
+- `global/AGENTS.md`: antes de trabajar en un proyecto se leen sus notas del vault; cada
+  proyecto vive en su carpeta.
+- `task-progress` 0.4.0: la columna encuentra la nota del proyecto en carpetas de contexto
+  (`1. Projects/<Contexto>/<Proyecto>/`). Una carpeta que tiene una nota con su mismo nombre es
+  un proyecto. La fila `| Repo |` de la nota principal ahora gana sobre el nombre.
+
+### Fixed
+
+- `task-progress`: con dos repos del mismo nombre en contextos distintos, la columna mostraba en
+  los dos el roadmap del primero que coincidía por nombre.
+
 ## [1.9.1] - 2026-10-15
 
 ### Fixed

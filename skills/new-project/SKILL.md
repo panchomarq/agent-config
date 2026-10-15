@@ -54,6 +54,7 @@ the only direct push to `main` ever allowed.
 
 ## 5. Vault
 
-Load the `obsidian-vault` skill and create the project note in `1. Projects/` from its
-`templates/Proyecto.md`, with the repo path, stack and a first roadmap phase. Link it from
-the vault's projects index note if one exists.
+Load the `obsidian-vault` skill and create the project's folder and main note,
+`1. Projects/<Context>/<Project>/<Project>.md`, from its `templates/Proyecto.md`, with the repo
+path in the `| Repo |` row, the stack and a first roadmap phase. Add the project's row to the
+context's index note. Ask which context the project belongs to if it isn't clear.

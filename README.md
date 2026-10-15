@@ -178,8 +178,9 @@ LO ÚLTIMO
   Claude que lo declare antes de empezar.
 - **Sigue** sale de la nota del proyecto en el vault (`vault-write --where` dice dónde está):
   las primeras casillas sin marcar de la primera sección `## ` que todavía tiene alguna. La nota
-  se busca en `1. Projects/` por el nombre de la carpeta del repo, y si no aparece, por una
-  fila `| Repo |` que nombre la ruta del repo.
+  se busca en `1. Projects/` y sus carpetas de contexto (`1. Projects/<Contexto>/<Proyecto>/`):
+  primero la nota principal cuya fila `| Repo |` nombre la ruta del repo, y si ninguna la
+  nombra, la del proyecto que se llama como la carpeta del repo.
 - **Lo último** son los últimos tres merges de la rama principal del repo.
 
 La columna solo puede ir al costado en el modo de pantalla completa de la terminal, que es el

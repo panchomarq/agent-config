@@ -72,7 +72,10 @@ function shop(): World {
       ],
       [`${PROJECTS}/Otro Proyecto`]: [{ name: 'Otro Proyecto.md', kind: 'file' }],
     },
-    files: { [`${PROJECTS}/Shop - Roadmap.md`]: ROADMAP },
+    files: {
+      [`${PROJECTS}/Shop - Roadmap.md`]: ROADMAP,
+      [`${PROJECTS}/Otro Proyecto/Otro Proyecto.md`]: '| Repo | `~/projects/otro` |\n',
+    },
     panes: [],
     opened: [],
     placesOnOpen: true,
@@ -600,6 +603,59 @@ test("a note whose Repo row names the repository is the project's note", async (
 
   expect(rows[0]).toBe('blog | Blog Personal')
   expect(rows).toContain('○ Sí es este')
+})
+
+/** The vault laid out by context: an index beside one folder per project. */
+function byContext(world: World): void {
+  const personal = `${PROJECTS}/Personal`
+  world.dirs[PROJECTS] = [
+    { name: 'Personal', kind: 'dir' },
+    { name: 'Trabajo', kind: 'dir' },
+  ]
+  world.dirs[personal] = [
+    { name: 'Proyectos Personales.md', kind: 'file' },
+    { name: 'Shop', kind: 'dir' },
+  ]
+  world.dirs[`${personal}/Shop`] = [
+    { name: 'Shop.md', kind: 'file' },
+    { name: 'Shop - Roadmap.md', kind: 'file' },
+  ]
+  world.dirs[`${PROJECTS}/Trabajo`] = [{ name: 'Tienda Trabajo', kind: 'dir' }]
+  world.dirs[`${PROJECTS}/Trabajo/Tienda Trabajo`] = [{ name: 'Tienda Trabajo.md', kind: 'file' }]
+  world.files = {
+    [`${personal}/Proyectos Personales.md`]: '| [[Shop]] | `~/projects/shop` |\n',
+    [`${personal}/Shop/Shop.md`]: '| Repo | `~/projects/shop/` |\n',
+    [`${personal}/Shop/Shop - Roadmap.md`]: ROADMAP,
+    [`${PROJECTS}/Trabajo/Tienda Trabajo/Tienda Trabajo.md`]:
+      '| Repo | `~/projects/trabajo/shop` |\n## Roadmap\n- [ ] Del trabajo\n',
+  }
+}
+
+test('a project folder inside a context folder holds the note', async ($, on) => {
+  const world = shop()
+  byContext(world)
+  const clock = engineBeneath(on, world)
+  await startIn($, clock, world)
+
+  const rows = await column($)
+
+  expect(rows[0]).toBe('shop | Shop - Roadmap')
+  expect(rows).toContain('SIGUE | 1/6 hechas')
+})
+
+test('the Repo row wins over a project of the same name in another context', async ($, on) => {
+  const world = shop()
+  byContext(world)
+  const work = `${HOME}/projects/trabajo/shop`
+  world.cwd = work
+  world.commands['git rev-parse --path-format=absolute --git-common-dir'] = `${work}/.git`
+  const clock = engineBeneath(on, world)
+  await startIn($, clock, world)
+
+  const rows = await column($)
+
+  expect(rows[0]).toBe('shop | Tienda Trabajo')
+  expect(rows).toContain('○ Del trabajo')
 })
 
 test('an unreachable vault is said in place of the roadmap', async ($, on) => {
