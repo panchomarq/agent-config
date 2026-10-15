@@ -24,6 +24,10 @@ it into each agent's config directory on any machine. Updating a machine means
   up as `<file>.bak-<timestamp>`), never touch symlinks that don't point into this repo, and
   keep `--check` side-effect free. JSON configs are merged (`jq` deep merge, repo wins), not
   linked, because agents rewrite them.
+- **Third-party skills are copies.** A skill listed under "Skills de terceros" in
+  `docs/inventory.md` was copied from the repo and commit recorded there. Don't edit it in
+  place: update it by re-copying from a newer commit and reading the diff, and record any local
+  change in that table.
 - **Retiring something** = delete it from the repo (the installer prunes its symlinks on every
   machine) or set a plugin to `false` in `agents/claude/settings.json`, and add a row to the
   "Retirados" / state table in `docs/inventory.md` with date and reason.
@@ -44,8 +48,9 @@ it into each agent's config directory on any machine. Updating a machine means
 
 ## Every change
 
-1. Run `tests/run.sh` (shellcheck, ruff, JSON validity, inventory check, installer tests in a
-   throwaway `HOME`, status line tests, `vault-write` tests). It must pass with zero warnings.
+1. Run `tests/run.sh` (shellcheck, ruff, JSON validity, inventory and skill checks, installer
+   tests in a throwaway `HOME`, status line tests, `vault-write` tests). It must pass with zero
+   warnings.
 2. Update `docs/inventory.md` when adding, disabling or retiring anything.
 3. Add an entry under `## [Unreleased]` in `CHANGELOG.md`; on release, bump `VERSION`
    (SemVer: breaking layout/installer change = major, new skill or setting = minor,
