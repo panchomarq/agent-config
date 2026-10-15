@@ -47,12 +47,15 @@ Do not edit the installed copy — it is a symlink into that repo.
 ## Obsidian vault (source of truth for status and decisions)
 
 My Obsidian vault is the source of truth for project status, roadmaps, findings and system
-changes. **Load the `obsidian-vault` skill before reading or writing it.** In short:
+changes, and the agents' long-term memory. **Load the `obsidian-vault` skill before reading or
+writing it**: it says where every kind of note goes. In short:
 
+- Before working on a project, read its vault notes for the decisions already taken.
 - Status questions ("¿cómo vamos?") are answered from the vault first, then the repo.
   If the vault is unreachable, say so — don't guess.
 - Record findings (bugs, design decisions, verified data) in the project's vault note as you
   find them, and update roadmap checkboxes when a phase or PR closes.
+- Each project lives in its own folder, `1. Projects/<Context>/<Project>/`, never loose.
 - Every change to the OS, agent config, installed software or hardware gets a changelog entry
   via `vault-write`, before the session ends. Nobody needs to ask.
 

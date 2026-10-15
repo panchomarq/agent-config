@@ -1,5 +1,5 @@
 ---
-tags: [prd, agent-task]
+tags: [prd, {contexto}, agent-task]
 task-id: {task-id}
 project: {proyecto}
 tier: 2

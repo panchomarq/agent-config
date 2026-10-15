@@ -26,5 +26,5 @@ intentional. Example: "Money is stored as integer cents", "Migrations are applie
 - `docs/brainstorms/` — requirements explorations
 - `docs/plans/` — implementation plans (`YYYY-MM-DD-NNN-<type>-<slug>-plan.md`)
 - `docs/design/<section>/` — UI mockups
-- Vault note: `1. Projects/{Project}.md` (status and roadmap live there — see the
-  `obsidian-vault` skill)
+- Vault note: `1. Projects/{Context}/{Project}/{Project}.md` (status, decisions and roadmap
+  live there — see the `obsidian-vault` skill)
