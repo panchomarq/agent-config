@@ -1,4 +1,4 @@
-import type { ElementTable, EngineInterface, On } from 'claude-code'
+import type { ElementTable, EngineInterface, On, RenderNode } from 'claude-code'
 
 import { bandLines, columnLines, fitLine } from './lines'
 import type { Line, Seg } from './lines'
@@ -49,6 +49,23 @@ export function drawLines(ui: Ui, lines: readonly Line[], width: number) {
       })}
     </Box>
   )
+}
+
+/** True when a drawing shows nothing: no text and no control anywhere in it. */
+export function isBlank(node: RenderNode | null | undefined): boolean {
+  if (node === null || node === undefined) {
+    return true
+  }
+
+  if (typeof node === 'string') {
+    return node.trim() === ''
+  }
+
+  if (node.type === 'Box' || node.type === 'Text') {
+    return (node.children ?? []).every(isBlank)
+  }
+
+  return false
 }
 
 async function openColumn($: EngineInterface) {
@@ -112,12 +129,10 @@ export function drawColumn(on: On): void {
   // The header: the column's summary in the band above the prompt, wherever the column is not
   // drawn. In the fullscreen layout it also opens the column, which the terminal docks once it
   // is wide enough; the person closing it keeps it closed until /columna.
+  // The band goes first to whatever else draws there (a survey, a mod's held command with its
+  // Proceed and Cancel): the header only fills it while it would otherwise be empty.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { isOpen, isShown } = await columnOf($)
-
-    if (e.props.hasSurvey || isShown) {
-      return next(e)
-    }
 
     if (!isOpen && e.viewport?.isFullscreen === true && !(await readDismissed($))) {
       void openColumn($).then(
@@ -126,8 +141,14 @@ export function drawColumn(on: On): void {
       )
     }
 
+    const beneath = await next(e)
+
+    if (e.props.hasSurvey || isShown || !isBlank(beneath)) {
+      return beneath
+    }
+
     const lines = bandLines(await viewOf($), Math.min(HEADER_ROWS, e.props.maxRows))
 
-    return lines.length === 0 ? next(e) : drawLines($.ui.resolve(e), lines, e.props.bodyColumns)
+    return lines.length === 0 ? beneath : drawLines($.ui.resolve(e), lines, e.props.bodyColumns)
   })
 }

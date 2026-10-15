@@ -50,6 +50,8 @@ type World = {
   panes: Pane[]
   opened: string[]
   placesOnOpen: boolean
+  /** What another mod draws in the band above the prompt; null leaves the band empty. */
+  band: string | null
   toolsRegistered: unknown[]
   commandsRegistered: string[]
 }
@@ -74,6 +76,7 @@ function shop(): World {
     panes: [],
     opened: [],
     placesOnOpen: true,
+    band: null,
     toolsRegistered: [],
     commandsRegistered: [],
   }
@@ -153,11 +156,7 @@ function engineBeneath(on: On, world: World = shop()) {
   on('ui.render', { component: 'AbovePrompt' }, ($, e) => {
     const { Box, Text } = $.ui.resolve(e)
 
-    return (
-      <Box key={ENGINE_OWN}>
-        <Text>engine</Text>
-      </Box>
-    )
+    return <Box key={ENGINE_OWN}>{world.band === null ? [] : [<Text>{world.band}</Text>]}</Box>
   })
   mock.env(on, { HOME })
 
@@ -271,7 +270,7 @@ async function column($: Engine, placement: 'dock' | 'inline' = 'dock', bodyColu
   return rows
 }
 
-/** The band above the prompt: the header's rows, or the engine's own text when it passes. */
+/** The band above the prompt: the header's rows, or `beneath: <text>` when it lets it be. */
 async function header($: Engine, isFullscreen = false, bodyColumns = 120) {
   const ui = await $.ui.mount({
     plugin: 'task-progress',
@@ -291,7 +290,7 @@ async function header($: Engine, isFullscreen = false, bodyColumns = 120) {
   const rows = await rowsOf(ui)
   await ui.unmount()
 
-  return own === undefined ? rows : [own.text]
+  return own === undefined ? rows : [`beneath: ${own.text}`]
 }
 
 // ── The task ──────────────────────────────────────────────────────────────────────────────
@@ -770,7 +769,22 @@ test('in the fullscreen layout the header opens the column, then steps aside', a
   await header($, true)
 
   expect(world.opened).toEqual([PANE])
-  expect(await header($, true)).toEqual(['engine'])
+  expect(await header($, true)).toEqual(['beneath: '])
+})
+
+test("another mod's band above the prompt, like a held command, wins", async ($, on) => {
+  const world = shop()
+  const clock = engineBeneath(on, world)
+  await startIn($, clock, world)
+  await startTurn($)
+  await declare($, 1)
+  world.band = '⚠ Blast Radius · rm -rf · Proceed / Cancel'
+
+  expect(await header($)).toEqual(['beneath: ⚠ Blast Radius · rm -rf · Proceed / Cancel'])
+
+  world.band = null
+
+  expect((await header($))[0]).toMatch(/^◆ /)
 })
 
 test('a column waiting for a wider terminal leaves the header up', async ($, on) => {
