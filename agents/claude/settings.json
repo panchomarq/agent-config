@@ -26,6 +26,10 @@
       "Bash(git push * HEAD)"
     ]
   },
+  "env": {
+    "PLAYWRIGHT_MCP_HEADLESS": "true",
+    "PLAYWRIGHT_MCP_ISOLATED": "true"
+  },
   "model": "opus[1m]",
   "effortLevel": "xhigh",
   "theme": "dark",

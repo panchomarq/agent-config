@@ -167,6 +167,23 @@ test_shared_rules_refuse_main_forced_and_unnamed_pushes() {
   assert_eq "$(push_verdict "git -C . push origin main")" "unmatched"
 }
 
+test_settings_merge_keeps_machine_browser_path_and_repo_env_wins() {
+  mkdir -p "$SANDBOX/home/.claude"
+  cat >"$SANDBOX/home/.claude/settings.json" <<'JSON'
+{
+  "env": {
+    "PLAYWRIGHT_MCP_EXECUTABLE_PATH": "/opt/browser",
+    "PLAYWRIGHT_MCP_HEADLESS": "false"
+  }
+}
+JSON
+  run_install >/dev/null
+  local s="$SANDBOX/home/.claude/settings.json"
+  assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_EXECUTABLE_PATH "$s")" "/opt/browser"
+  assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_HEADLESS "$s")" "true"
+  assert_eq "$(jq -r .env.PLAYWRIGHT_MCP_ISOLATED "$s")" "true"
+}
+
 test_invalid_settings_json_aborts_untouched() {
   mkdir -p "$SANDBOX/home/.claude"
   echo '{broken' >"$SANDBOX/home/.claude/settings.json"
