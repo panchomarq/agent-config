@@ -19,7 +19,13 @@ Do not edit the installed copy — it is a symlink into that repo.
     A pushed branch that needs fixing gets another commit.
   - Push with the branch named (`git push origin <branch>`), never a bare `git push` or
     `HEAD`: the branch being pushed has to be readable in the command.
-  - One PR per feature. No stacked PRs: every PR targets `main`.
+  - One PR per feature, and every PR targets `main`.
+  - PRs merge cleanly in the order they are opened, so I can merge them one after another
+    without telling you in between. Before opening a PR, simulate merging every open PR in
+    order and then yours (`git merge-tree`). If yours conflicts with an earlier PR that is
+    still open, branch from that PR's branch (or merge it in) and resolve the conflict in
+    yours. When an earlier PR gets new commits, merge it into every later open branch. Say in
+    the PR which PRs it includes and that it merges after them.
   - Commit messages: conventional commits (`feat(scope): …`), English, imperative.
 - **New project → `git init` + initial commit + README.md immediately**, without being asked.
   Use the `new-project` skill for the standard layout.
