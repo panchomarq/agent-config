@@ -15,6 +15,10 @@ Do not edit the installed copy — it is a symlink into that repo.
   - Never push or merge to `main`. Work on a feature branch, push it, open a PR against
     `main`, then stop and give me the PR link. I review and merge. "Merge it" or "go ahead"
     means "open the PR", not `gh pr merge`.
+  - Never force-push, to any branch: no `--force`, `--force-with-lease`, `-f` or `+refspec`.
+    A pushed branch that needs fixing gets another commit.
+  - Push with the branch named (`git push origin <branch>`), never a bare `git push` or
+    `HEAD`: the branch being pushed has to be readable in the command.
   - One PR per feature. No stacked PRs: every PR targets `main`.
   - Commit messages: conventional commits (`feat(scope): …`), English, imperative.
 - **New project → `git init` + initial commit + README.md immediately**, without being asked.

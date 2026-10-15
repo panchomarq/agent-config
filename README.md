@@ -39,7 +39,8 @@ Cómo lo consume cada agente:
 
 Todo son **symlinks al repo**, salvo los JSON (`settings.json`, `opencode.json`), que se
 **fusionan** porque los agentes los reescriben: las claves del repo ganan y las que solo
-existen en la máquina (por ejemplo, permisos locales) se conservan.
+existen en la máquina se conservan. Las listas de permisos (`permissions.allow`, `ask` y
+`deny`) se unen: quedan las reglas de la máquina y se suman las del repo.
 
 ## Instalación en una máquina nueva
 
@@ -103,7 +104,9 @@ Dónde va cada cosa:
 | Una regla para todos los agentes y proyectos | `global/AGENTS.md` |
 | Un procedimiento reutilizable (con archivos de apoyo) | `skills/<nombre>/SKILL.md` |
 | Algo solo de Claude Code | `agents/claude/CLAUDE.md` o `settings.json` |
-| Un permiso o ajuste de una sola máquina | `~/.claude/settings.local.json` (fuera del repo) |
+| Un permiso para todos los proyectos y máquinas | `permissions` en `agents/claude/settings.json` |
+| Un permiso o ajuste de una sola máquina | `~/.claude/settings.json` (fuera del repo; el instalador conserva lo que el repo no define) |
+| Un permiso de un solo proyecto | `.claude/settings.local.json` en ese proyecto |
 | Datos, estado de proyectos, hechos personales | Vault de Obsidian o la memoria del agente (fuera del repo) |
 
 Para **dejar de usar** algo: bórralo del repo (el instalador elimina sus symlinks en cada
@@ -158,6 +161,24 @@ tiempo del turno (`sin plan de pasos ◇`), y si el turno termina con pasos pend
 Se instala con `./install.sh` (el repo es el marketplace `agent-config`). Para desarrollarlo:
 `claude --plugin-dir agents/claude/mods/task-progress`; las pruebas corren con
 `claude plugin test agents/claude/mods/task-progress`.
+
+## Navegador de Playwright
+
+El plugin `playwright` corre el navegador oculto (`PLAYWRIGHT_MCP_HEADLESS`) y con un perfil
+temporal por sesión (`PLAYWRIGHT_MCP_ISOLATED`), así varias sesiones abiertas no abren ventanas
+en el escritorio ni compiten por el mismo perfil. Los dos valores están en `env` de
+`agents/claude/settings.json`.
+
+Playwright busca Google Chrome. En una máquina que no lo tiene, indica el navegador instalado
+en `~/.claude/settings.json`:
+
+```json
+"env": { "PLAYWRIGHT_MCP_EXECUTABLE_PATH": "/ruta/al/navegador" }
+```
+
+El instalador conserva ese valor al mezclar la configuración del repo. Va en
+`~/.claude/settings.json` y no en `~/.claude/settings.local.json`, porque ese archivo solo se
+aplica a las sesiones abiertas en `~`. El cambio vale para las sesiones nuevas.
 
 ## Estándares que sigue
 
