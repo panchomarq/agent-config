@@ -39,8 +39,8 @@ content into `AGENTS.md` and leave `@AGENTS.md` as the only line of `CLAUDE.md`.
 
 Set up the stack's toolchain from the global instructions as part of the first commit:
 linter, formatter, type checker, test runner, and `prek install` with hooks that run them.
-A `.gitignore` for the stack, and `.env.example` if the project reads environment variables
-(`.env*` files other than the example stay ignored).
+A `.gitignore` for the stack that also ignores `.claude/worktrees/`, and `.env.example` if the
+project reads environment variables (`.env*` files other than the example stay ignored).
 
 ## 4. First commit and remote
 

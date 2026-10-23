@@ -27,6 +27,20 @@ Do not edit the installed copy — it is a symlink into that repo.
     yours. When an earlier PR gets new commits, merge it into every later open branch. Say in
     the PR which PRs it includes and that it merges after them.
   - Commit messages: conventional commits (`feat(scope): …`), English, imperative.
+- **One clone per project; worktrees only while a task runs.** Each project has exactly one
+  clone, in the projects folder. That clone and GitHub are the source of truth for the code.
+  Never make a second clone or a copy of a project.
+  - Agents that change code in parallel each get a git worktree, created by the agent tool
+    itself so its own cleanup applies. Never create one by hand in a sibling folder (no
+    `<project>-wt/`). Agents that only read, research or review stay in the main clone.
+  - A worktree lives only as long as its task. When the task ends (branch pushed and PR
+    opened, or work dropped), remove it from the main clone with `git worktree remove <path>`
+    and check `git worktree list`. Don't wait for the tool's own cleanup: it deletes right
+    away only worktrees with no changes. Removing it deletes its `.next`, `node_modules` and
+    other caches, which are what take the disk. The branch stays on GitHub; to fix a PR later,
+    open a new worktree on it.
+  - If `git worktree remove` refuses because of uncommitted or untracked files, commit and
+    push them or ask me. Never `--force` away work.
 - **New project → `git init` + initial commit + README.md immediately**, without being asked.
   Use the `new-project` skill for the standard layout.
 - **Tests ship with the feature**, in the same PR. Run tests, linters and type checks locally
@@ -149,7 +163,6 @@ Use these when installed; `./install.sh --check` in the agent-config repo lists 
 | `actionlint` | - | `actionlint .github/workflows/` - GitHub Actions linter |
 | `zizmor` | - | `zizmor .github/workflows/` - Actions security audit |
 | `prek` | pre-commit | `prek run` - fast git hooks (Rust, no Python) |
-| `wt` | git worktree | `wt switch branch` - manage parallel worktrees |
 | `trash` | rm | `trash file` - recoverable delete (`trash-cli` on Linux). **Never use `rm -rf`** |
 
 Prefer `ast-grep` over ripgrep when searching for code structure (function calls, class definitions, imports, pattern matching across arguments). Use ripgrep for literal strings and log messages.
@@ -175,10 +188,16 @@ Tests in `tests/` directory mirroring package structure. Supply chain: `pip-audi
 
 | purpose | tool |
 |---------|------|
+| packages | `pnpm` |
 | lint | `oxlint` |
 | format | `oxfmt` |
 | test | `vitest` |
 | types | `tsc --noEmit` |
+
+**Always use pnpm**, never npm, npx or yarn (`pnpm dlx` replaces `npx`). In a new worktree run
+`pnpm install`: pnpm links or clones files from its store, so the copy costs almost no disk.
+Don't copy or symlink `node_modules` between folders. A project still on npm moves to pnpm in
+its own PR (`pnpm import` turns `package-lock.json` into `pnpm-lock.yaml`).
 
 **Always use oxlint and oxfmt** over eslint/prettier — they're faster and stricter. Enable `typescript`, `import`, `unicorn` plugins.
 
@@ -272,9 +291,8 @@ Pin actions to SHA hashes with version comments: `actions/checkout@<full-sha>  #
 - Never push directly to main — use feature branches and PRs
 - Never commit secrets, API keys, or credentials — use `.env` files (gitignored) and environment variables
 
-**Hooks and worktrees:**
+**Hooks:**
 - Install prek in every repo (`prek install`). Run `prek run` before committing. Configure auto-updates: `prek auto-update --cooldown-days 7`
-- Parallel subagents require worktrees. Each subagent MUST work in its own worktree (`wt switch <branch>`), not the main repo. Never share working directories.
 
 **Pull requests:**
 Describe what the code does now — not discarded approaches, prior iterations, or alternatives. Only describe what's in the diff.

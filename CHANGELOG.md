@@ -5,6 +5,37 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-23
+
+### Changed
+
+- `global/AGENTS.md`: un solo clon por proyecto, y los worktrees duran lo que dura su tarea.
+  Ese clon y GitHub son la fuente de verdad del código; no se hacen segundos clones ni copias.
+  Los agentes que cambian código en paralelo trabajan cada uno en un worktree que crea la
+  propia herramienta del agente, nunca a mano en una carpeta `<proyecto>-wt/`. Al terminar la
+  tarea (rama pusheada y PR abierto, o trabajo descartado), el worktree se borra con
+  `git worktree remove`, que se lleva su `.next`, su `node_modules` y las demás cachés. Si git
+  se niega por archivos sin guardar, se commitean o se pregunta; nunca `--force`. Reemplaza la
+  regla que daba a cada subagente un worktree con `wt` que nadie borraba (29 copias, 27 GB
+  según `du`).
+- `global/AGENTS.md`: pnpm siempre, nunca npm, npx ni yarn. Cada worktree nuevo corre
+  `pnpm install`, que comparte archivos con la caché de pnpm; un proyecto que sigue en npm pasa
+  a pnpm en su propio PR (`pnpm import`).
+- `agents/claude/CLAUDE.md`: Claude Code crea los worktrees con `isolation: "worktree"`,
+  `claude --worktree` o `EnterWorktree` (en `.claude/worktrees/`, con `.worktreeinclude` para
+  los `.env`), nunca con `ce-worktree`, `wt` ni `git worktree add` a mano. Claude Code solo
+  borra por su cuenta los worktrees sin cambios: uno con commits espera días al barrido de
+  `cleanupPeriodDays` y uno de `claude -p --worktree` nunca se borra. Por eso el agente lo borra
+  apenas pushea su rama y revisa `git worktree list`. `cleanupPeriodDays` no se baja, porque
+  también decide cuánto se guardan las transcripciones.
+- `fix-issue` y `review-pr`: el ejemplo de build es `pnpm build`, no `npm run build`.
+- `new-project`: el `.gitignore` inicial ignora `.claude/worktrees/`.
+- `obsidian-vault`: al dejar una sesión, dónde retomar es la rama y el PR, sin worktree.
+
+### Removed
+
+- `wt` de las herramientas recomendadas (`global/AGENTS.md` e `install.sh --check`).
+
 ## [1.10.0] - 2026-10-15
 
 ### Changed
