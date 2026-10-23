@@ -16,7 +16,7 @@ DRIFT=0
 FAILED_PLUGINS=()
 REPO_MARKETPLACE_FRESH=0
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-config"
-RECOMMENDED_TOOLS=(rg fd ast-grep shellcheck shfmt actionlint zizmor prek wt trash uv)
+RECOMMENDED_TOOLS=(rg fd ast-grep shellcheck shfmt actionlint zizmor prek trash uv)
 
 usage() { sed -n '2,8s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; }
 

@@ -113,7 +113,7 @@ Rules:
 - **Closing work:** when a PR is opened or a phase closes, tick the roadmap checkboxes and add a
   line to the note's changelog table.
 - **Leaving a session:** if the project's state changed, leave in the main note what is done,
-  what is pending and where to resume (branch, PR, worktree).
+  what is pending and where to resume (branch, PR).
 - **The repo wins for what it versions.** For a schema, an API or code docs, summarize in the
   note and point to the file in the repo instead of copying it.
 

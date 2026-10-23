@@ -27,6 +27,12 @@ Do not edit the installed copy — it is a symlink into that repo.
     yours. When an earlier PR gets new commits, merge it into every later open branch. Say in
     the PR which PRs it includes and that it merges after them.
   - Commit messages: conventional commits (`feat(scope): …`), English, imperative.
+- **One folder per project.** Each project has exactly one local copy, its clone in the
+  projects folder. That folder and GitHub are the source of truth for the code. Never create
+  worktrees, second clones or copies of a project (no `<project>-wt/` folders): branches live
+  in git and on GitHub, not in extra folders. Parallel work means parallel branches, not
+  parallel folders. Agents that change code take turns in the project's folder, each on its
+  own branch; subagents running at the same time only read, research or review.
 - **New project → `git init` + initial commit + README.md immediately**, without being asked.
   Use the `new-project` skill for the standard layout.
 - **Tests ship with the feature**, in the same PR. Run tests, linters and type checks locally
@@ -149,7 +155,6 @@ Use these when installed; `./install.sh --check` in the agent-config repo lists 
 | `actionlint` | - | `actionlint .github/workflows/` - GitHub Actions linter |
 | `zizmor` | - | `zizmor .github/workflows/` - Actions security audit |
 | `prek` | pre-commit | `prek run` - fast git hooks (Rust, no Python) |
-| `wt` | git worktree | `wt switch branch` - manage parallel worktrees |
 | `trash` | rm | `trash file` - recoverable delete (`trash-cli` on Linux). **Never use `rm -rf`** |
 
 Prefer `ast-grep` over ripgrep when searching for code structure (function calls, class definitions, imports, pattern matching across arguments). Use ripgrep for literal strings and log messages.
@@ -272,9 +277,8 @@ Pin actions to SHA hashes with version comments: `actions/checkout@<full-sha>  #
 - Never push directly to main — use feature branches and PRs
 - Never commit secrets, API keys, or credentials — use `.env` files (gitignored) and environment variables
 
-**Hooks and worktrees:**
+**Hooks:**
 - Install prek in every repo (`prek install`). Run `prek run` before committing. Configure auto-updates: `prek auto-update --cooldown-days 7`
-- Parallel subagents require worktrees. Each subagent MUST work in its own worktree (`wt switch <branch>`), not the main repo. Never share working directories.
 
 **Pull requests:**
 Describe what the code does now — not discarded approaches, prior iterations, or alternatives. Only describe what's in the diff.

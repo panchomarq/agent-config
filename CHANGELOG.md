@@ -5,6 +5,24 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-23
+
+### Changed
+
+- `global/AGENTS.md`: una sola carpeta por proyecto. Cada proyecto tiene una única copia local,
+  su clon en la carpeta de proyectos; esa carpeta y GitHub son la fuente de verdad del código.
+  No se crean worktrees, segundos clones ni copias (nada de carpetas `<proyecto>-wt/`). El
+  trabajo en paralelo son ramas en paralelo, no carpetas: los agentes que cambian código se
+  turnan en la carpeta del proyecto, cada uno en su rama, y los subagentes simultáneos solo
+  leen, investigan o revisan. Reemplaza la regla que daba a cada subagente su propio worktree.
+- `agents/claude/CLAUDE.md`: Claude Code no usa `isolation: "worktree"`, `EnterWorktree` ni el
+  skill `ce-worktree`.
+- `obsidian-vault`: al dejar una sesión, dónde retomar es la rama y el PR, sin worktree.
+
+### Removed
+
+- `wt` de las herramientas recomendadas (`global/AGENTS.md` e `install.sh --check`).
+
 ## [1.10.0] - 2026-10-15
 
 ### Changed
