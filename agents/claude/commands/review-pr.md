@@ -200,7 +200,7 @@ command if one was found; otherwise fall back to the default.
 
 | step         | command                                        |
 |--------------|------------------------------------------------|
-| build        | per project (`npm run build`, `tsc`, etc.)     |
+| build        | per project (`pnpm build`, `tsc`, etc.)        |
 | test         | `vitest` (or project test script)              |
 | lint         | `oxlint` (or project lint script)              |
 | format       | `oxfmt --check` (or project format script)     |

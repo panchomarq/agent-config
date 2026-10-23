@@ -23,9 +23,15 @@ Everything above is shared with every other agent. This section only covers Clau
   file. Start with the smallest fleet that covers the work and add agents only after the first
   results land. After a usage-limit reset, check whether interrupted workflows restarted by
   themselves before launching anything.
-- **No worktrees.** Never pass `isolation: "worktree"` to the Agent tool, and never use
-  `EnterWorktree` or the `ce-worktree` skill: every agent works in the project's one folder
-  (see "One folder per project" above).
+- **Worktrees come from Claude Code.** For parallel agents that change code, use
+  `isolation: "worktree"` on the Agent tool, `claude --worktree` or `EnterWorktree`. Those
+  worktrees live under `.claude/worktrees/` (keep that path in `.gitignore`) and get env files
+  through `.worktreeinclude`. Never use the `ce-worktree` skill, `wt` or a hand-made
+  `git worktree add`. Claude Code deletes on its own only a worktree with no changes: one with
+  commits waits days for the `cleanupPeriodDays` sweep, and a `claude -p --worktree` run is
+  never deleted. So once a worktree's branch is pushed, remove it yourself and check
+  `git worktree list` (see "One clone per project" above). Don't lower `cleanupPeriodDays` to
+  speed this up: it also sets how long session transcripts are kept.
 - **A running session cannot switch its own model.** If a task needs a stronger model than the
   current session, say so and suggest `/model` or `/clear` instead of doing it silently.
 - **Auto memory vs this repo.** Personal facts (paths on this machine, project state, people)

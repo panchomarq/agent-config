@@ -27,12 +27,20 @@ Do not edit the installed copy — it is a symlink into that repo.
     yours. When an earlier PR gets new commits, merge it into every later open branch. Say in
     the PR which PRs it includes and that it merges after them.
   - Commit messages: conventional commits (`feat(scope): …`), English, imperative.
-- **One folder per project.** Each project has exactly one local copy, its clone in the
-  projects folder. That folder and GitHub are the source of truth for the code. Never create
-  worktrees, second clones or copies of a project (no `<project>-wt/` folders): branches live
-  in git and on GitHub, not in extra folders. Parallel work means parallel branches, not
-  parallel folders. Agents that change code take turns in the project's folder, each on its
-  own branch; subagents running at the same time only read, research or review.
+- **One clone per project; worktrees only while a task runs.** Each project has exactly one
+  clone, in the projects folder. That clone and GitHub are the source of truth for the code.
+  Never make a second clone or a copy of a project.
+  - Agents that change code in parallel each get a git worktree, created by the agent tool
+    itself so its own cleanup applies. Never create one by hand in a sibling folder (no
+    `<project>-wt/`). Agents that only read, research or review stay in the main clone.
+  - A worktree lives only as long as its task. When the task ends (branch pushed and PR
+    opened, or work dropped), remove it from the main clone with `git worktree remove <path>`
+    and check `git worktree list`. Don't wait for the tool's own cleanup: it deletes right
+    away only worktrees with no changes. Removing it deletes its `.next`, `node_modules` and
+    other caches, which are what take the disk. The branch stays on GitHub; to fix a PR later,
+    open a new worktree on it.
+  - If `git worktree remove` refuses because of uncommitted or untracked files, commit and
+    push them or ask me. Never `--force` away work.
 - **New project → `git init` + initial commit + README.md immediately**, without being asked.
   Use the `new-project` skill for the standard layout.
 - **Tests ship with the feature**, in the same PR. Run tests, linters and type checks locally
@@ -180,10 +188,16 @@ Tests in `tests/` directory mirroring package structure. Supply chain: `pip-audi
 
 | purpose | tool |
 |---------|------|
+| packages | `pnpm` |
 | lint | `oxlint` |
 | format | `oxfmt` |
 | test | `vitest` |
 | types | `tsc --noEmit` |
+
+**Always use pnpm**, never npm, npx or yarn (`pnpm dlx` replaces `npx`). In a new worktree run
+`pnpm install`: pnpm links or clones files from its store, so the copy costs almost no disk.
+Don't copy or symlink `node_modules` between folders. A project still on npm moves to pnpm in
+its own PR (`pnpm import` turns `package-lock.json` into `pnpm-lock.yaml`).
 
 **Always use oxlint and oxfmt** over eslint/prettier — they're faster and stricter. Enable `typescript`, `import`, `unicorn` plugins.
 
