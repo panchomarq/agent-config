@@ -14,8 +14,8 @@ Versionado: [SemVer](https://semver.org/lang/es/).
     estructura empiezan por `graphify query`, `explain` o `path`, y la regla va en cada brief
     de subagente que explora código.
   - Después de cambiar código se corre `graphify update .`.
-  - Un repo con más de unos 20 archivos de código, donde se va a trabajar seguido, recibe su
-    grafo con `--code-only`.
+  - Todo repo con código tiene su grafo (`--code-only`): si falta, el agente lo arma antes de
+    explorar. Un repo que solo tiene Markdown no lleva grafo.
 - `agents/claude/settings.json`: hooks `graphify hook-guard`.
   - Los PreToolUse (`Bash|Grep`, `Read|Glob`) recuerdan el grafo antes de buscar o leer código
     y avisan si quedó viejo.

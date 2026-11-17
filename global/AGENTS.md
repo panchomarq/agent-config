@@ -183,9 +183,10 @@ tells you how a codebase fits together without re-reading it every session.
 - **Keep it current.** After changing code in a repo that has a graph, run
   `graphify update .` before you finish (AST only, a few seconds). Run it first too when the
   report's "Built from commit" is not `HEAD`, as after a pull or a branch switch.
-- **Build one** when you will work repeatedly in a repo with more than about 20 code files and
-  it has none, and tell me you did:
+- **Every repo with code has one.** If the repo you work in has code but no graph, build it
+  before exploring and tell me you did:
   `GRAPHIFY_BACKEND=none graphify extract . --code-only && GRAPHIFY_BACKEND=none graphify cluster-only .`
+  A repo with only Markdown gets none: reading the notes costs less than a model pass over them.
 - **Code only, no LLM.** `GRAPHIFY_BACKEND=none` (Claude Code sets it for every session) keeps
   graphify from sending files to a model or spending usage on `claude -p` to name communities.
   Don't run the `/graphify` semantic pass or pass `--backend` unless I ask.
