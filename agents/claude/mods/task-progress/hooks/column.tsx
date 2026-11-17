@@ -51,9 +51,13 @@ export function drawLines(ui: Ui, lines: readonly Line[], width: number) {
   )
 }
 
-/** True when a drawing shows nothing: no text and no control anywhere in it. */
+/**
+ * True when a drawing shows nothing: no text and no control anywhere in it. A reference to
+ * core's own drawing (`{ type: 'engine' }`) counts as blank: a mod that passes hands its row back
+ * to core, and what core draws in the band itself, a survey, arrives as `hasSurvey`.
+ */
 export function isBlank(node: RenderNode | null | undefined): boolean {
-  if (node === null || node === undefined) {
+  if (node === null || node === undefined || (typeof node === 'object' && node.type === 'engine')) {
     return true
   }
 

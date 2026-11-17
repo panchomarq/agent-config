@@ -3,6 +3,7 @@ import type { Engine } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
 import { describeAction } from '../hooks/agents'
+import { isBlank } from '../hooks/column'
 import { fitLine } from '../hooks/lines'
 import { cleanItem, mentionsRepo, parseRecent, parseRoadmap, pickNote } from '../hooks/project'
 
@@ -845,6 +846,12 @@ test("another mod's band above the prompt, like a held command, wins", async ($,
   world.band = null
 
   expect((await header($))[0]).toMatch(/^◆ /)
+})
+
+test("a mod's row that only hands the band back to core leaves the header its row", () => {
+  expect(isBlank({ type: 'engine', ref: 7 })).toBe(true)
+  expect(isBlank({ type: 'engine', ref: 0 })).toBe(true)
+  expect(isBlank('⚠ Blast Radius')).toBe(false)
 })
 
 test('a column waiting for a wider terminal leaves the header up', async ($, on) => {

@@ -13,7 +13,9 @@ Versionado: [SemVer](https://semver.org/lang/es/).
   las pestañas angostas. La franja arriba del prompt ahora tiene una fila por plugin y `next(e)`
   devuelve una referencia al dibujo del motor, no el árbol, así que el mod creía que otro la
   ocupaba. El header dibuja su propia fila, y cede la franja a la fila de otro mod (un comando
-  retenido con Proceed y Cancel) desde un hook de `AbovePromptList`. El test suma
+  retenido con Proceed y Cancel) desde un hook de `AbovePromptList`. La fila de un mod que
+  pasa con `next(e)` llega como referencia al dibujo del motor y cuenta como vacía, así que no
+  le quita el lugar al header. El test suma
   `isCollapsed`, que la API ahora exige, y `claude plugin validate` ya no avisa TS2741.
 
 ## [1.12.0] - 2026-11-16
