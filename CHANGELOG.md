@@ -5,6 +5,29 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-16
+
+### Added
+
+- Grafo de código con [graphify](https://github.com/Graphify-Labs/graphify) 0.9.111.
+  - `global/AGENTS.md`: si un repo tiene `graphify-out/graph.json`, las preguntas sobre su
+    estructura empiezan por `graphify query`, `explain` o `path`, y la regla va en cada brief
+    de subagente que explora código.
+  - Después de cambiar código se corre `graphify update .`.
+  - Un repo con más de unos 20 archivos de código, donde se va a trabajar seguido, recibe su
+    grafo con `--code-only`.
+- `agents/claude/settings.json`: hooks `graphify hook-guard`.
+  - Los PreToolUse (`Bash|Grep`, `Read|Glob`) recuerdan el grafo antes de buscar o leer código
+    y avisan si quedó viejo.
+  - El SessionStart `compact` reinicia el cupo de avisos.
+  - No dicen nada en un repo sin grafo ni en una máquina sin `graphify`, y nunca bloquean.
+- `agents/claude/settings.json`: `GRAPHIFY_BACKEND=none`, para que graphify no mande archivos a
+  ningún modelo ni gaste uso con `claude -p`.
+- `global/gitignore` e `install.sh`: el instalador suma al ignore global de git las líneas que
+  le faltan, empezando por `graphify-out/`. Usa `core.excludesFile` o, si no está definido,
+  `~/.config/git/ignore`. Solo agrega líneas: nunca reescribe el archivo.
+- `install.sh --check` avisa si falta `graphify`.
+
 ## [1.11.0] - 2026-10-23
 
 ### Changed

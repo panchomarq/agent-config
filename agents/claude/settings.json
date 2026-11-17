@@ -28,7 +28,44 @@
   },
   "env": {
     "PLAYWRIGHT_MCP_HEADLESS": "true",
-    "PLAYWRIGHT_MCP_ISOLATED": "true"
+    "PLAYWRIGHT_MCP_ISOLATED": "true",
+    "GRAPHIFY_BACKEND": "none"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard search 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard read 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "graphify hook-guard compact 2>/dev/null || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   },
   "model": "opus[1m]",
   "effortLevel": "xhigh",

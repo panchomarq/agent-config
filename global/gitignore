@@ -1,0 +1,3 @@
+# Lines install.sh adds to the global git ignore (core.excludesFile, or ~/.config/git/ignore).
+# Each one is a folder a tool regenerates locally and must never reach a commit.
+graphify-out/

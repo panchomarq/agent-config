@@ -12,6 +12,7 @@ de proyecto, convenciones del vault de Obsidian, settings y statusline de Claude
 ```
 agent-config/
 ├── global/AGENTS.md          instrucciones para TODOS los agentes (fuente única)
+├── global/gitignore          líneas que se suman al ignore global de git (p. ej. graphify-out/)
 ├── skills/                   skills en formato estándar (SKILL.md)
 │   ├── obsidian-vault/       cómo leer/escribir el vault + plantillas de notas
 │   ├── new-project/          estructura estándar de repos + plantilla
@@ -203,6 +204,32 @@ de leer el diff y pasar `claude plugin validate`):
 |---|---|---|
 | `blast-radius` | [anthropics/claude-code-playground](https://github.com/anthropics/claude-code-playground/tree/main/claude-code/mods/blast-radius) | Frena `rm -rf`, `git reset --hard`, `git clean`, force push y migraciones, muestra qué cambiarían y espera Proceed / Cancel |
 | `collision-guard` | [nateherkai/claude-code-mods](https://github.com/nateherkai/claude-code-mods/tree/main/collision-guard) | Pregunta antes de editar un archivo que otro chat abierto cambió en los últimos 30 min y ofrece pasar el trabajo a un worktree (`/guard` para ver estado o apagarlo) |
+
+## Grafo de código (graphify)
+
+[graphify](https://github.com/Graphify-Labs/graphify) arma un grafo de cada repo (archivos,
+símbolos, imports y llamadas) con tree-sitter, en local y sin LLM, para que los agentes
+consulten la estructura en lugar de releer el código. `install.sh` no lo instala; se instala
+una vez por máquina, fijado a la versión revisada:
+
+```bash
+uv tool install --python 3.13 "graphifyy[sql]==0.9.111"
+```
+
+En un repo:
+
+```bash
+GRAPHIFY_BACKEND=none graphify extract . --code-only   # primer grafo (segundos)
+GRAPHIFY_BACKEND=none graphify cluster-only .          # GRAPH_REPORT.md y graph.html
+graphify query "¿cómo se calculan los pagos?"          # subgrafo para una pregunta
+graphify update .                                      # después de cambiar código
+```
+
+Qué agrega el repo: la regla de uso en `global/AGENTS.md`, que leen todos los agentes. En
+Claude Code, además, hooks que recuerdan el grafo antes de buscar o leer código en un repo que
+lo tiene, y `GRAPHIFY_BACKEND=none` para que graphify nunca llame a un modelo. Por último,
+`graphify-out/` en el ignore global de git. Detalle y lo que se descartó, en
+`docs/inventory.md`.
 
 ## Navegador de Playwright
 

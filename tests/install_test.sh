@@ -305,6 +305,29 @@ test_check_reports_drift_without_fixing() {
   [[ ! -e "$SANDBOX/home/.claude/CLAUDE.md" ]] || fail "--check must not change anything"
 }
 
+test_git_ignore_gets_the_shared_lines() {
+  run_install >/dev/null
+  grep -qxF "graphify-out/" "$SANDBOX/home/.config/git/ignore" ||
+    fail "graphify-out/ should be in the global git ignore"
+}
+
+test_git_ignore_honors_excludes_file_and_keeps_its_lines() {
+  local ignore="$SANDBOX/home/my-ignore"
+  printf '[core]\n\texcludesFile = %s\n' "$ignore" >"$SANDBOX/home/.gitconfig"
+  printf '*.log' >"$ignore"
+  run_install >/dev/null
+  assert_eq "$(cat "$ignore")" $'*.log\ngraphify-out/'
+  [[ ! -e "$SANDBOX/home/.config/git/ignore" ]] || fail "the default ignore file should stay untouched"
+}
+
+test_graphify_hooks_are_silent_without_graphify() {
+  local cmd out
+  while IFS= read -r cmd; do
+    out="$(echo '{}' | env -i PATH="/usr/bin:/bin" sh -c "$cmd")" || fail "hook failed: $cmd"
+    assert_eq "$out" ""
+  done < <(jq -r '.hooks[][].hooks[].command' "$REPO/agents/claude/settings.json")
+}
+
 test_unknown_option_fails() {
   if run_install --bogus >/dev/null 2>&1; then fail "unknown option should fail"; fi
 }
