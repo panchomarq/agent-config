@@ -88,6 +88,31 @@ Evaluado el 2026-10-12 y no incluido:
 |---|---|---|
 | `vault-write` | activo | Agrega entradas al `## Changelog` del vault; las encola si el vault no está disponible |
 
+## Grafo de código: `graphify`
+
+[graphify](https://github.com/Graphify-Labs/graphify) (Apache-2.0) arma con tree-sitter un
+grafo de archivos, símbolos, imports y llamadas de un repo en `graphify-out/`, en local y sin
+LLM. Los agentes lo consultan (`graphify query`, `explain`, `path`) en lugar de releer el
+código en cada sesión. La regla de uso está en `global/AGENTS.md`.
+
+| Pieza | Estado | Desde | Qué hace |
+|---|---|---|---|
+| CLI `graphify` | activo | 2026-11-16 | No lo instala `install.sh` (`--check` avisa si falta). Se instala fijado: `uv tool install --python 3.13 "graphifyy[sql]==0.9.111"`. El paquete de PyPI es `graphifyy`, con dos y; los demás `graphify*` no son del proyecto |
+| Hooks `graphify hook-guard search` / `read` (PreToolUse `Bash\|Grep` y `Read\|Glob`) | activo | 2026-11-16 | Si el repo tiene `graphify-out/graph.json`, le recuerdan al agente que consulte el grafo antes de buscar o leer código (como mucho 5 avisos por sesión) y le avisan si el grafo quedó viejo. Sin grafo o sin `graphify` instalado no dicen nada. Tardan unos 50–70 ms. Nunca bloquean: sin `--strict` y con `\|\| true` |
+| Hook `graphify hook-guard compact` (SessionStart `compact`) | activo | 2026-11-16 | Después de compactar el contexto, reinicia el cupo de avisos y recuerda el grafo en una línea |
+| `GRAPHIFY_BACKEND=none` (`env`) | activo | 2026-11-16 | graphify no manda archivos a ningún modelo ni gasta uso con `claude -p` para nombrar comunidades |
+| `graphify-out/` en el ignore global de git (`global/gitignore`) | activo | 2026-11-16 | El grafo se reescribe entero en cada build: commitearlo generaría conflictos entre PRs en paralelo |
+
+Evaluado el 2026-11-16 y no incluido:
+
+| Qué | Motivo |
+|---|---|
+| Skill `/graphify` (`graphify install`) | Son 824 líneas, y su descripción la carga ante cualquier pregunta sobre código. Su flujo completo pasa los docs por subagentes, lo que gasta tokens. Además escribe un bloque en `~/.claude/CLAUDE.md`, que es un symlink a este repo. Para el grafo de código alcanza con el CLI |
+| `graphify claude install` (por proyecto) | Escribe un bloque en el `CLAUDE.md` del proyecto, que solo debe tener `@AGENTS.md`, y hooks en `.claude/settings.json`, que se commitea. Los hooks globales de acá cubren todos los repos |
+| `graphify hook install` (hooks de git) | Registra un merge driver en `.gitattributes`, un archivo versionado. Mantener el grafo al día es la regla de `global/AGENTS.md` |
+| Modo `--strict` | Niega la primera lectura de un archivo indexado en cada sesión. Con un aviso alcanza |
+| Servidor MCP (`graphifyy[mcp]`) y Graphify Cloud | El CLI ya da lo mismo sin otro proceso, y Cloud es un servicio externo pago |
+
 ## Plugins de Claude Code (`agents/claude/settings.json`)
 
 | Plugin | Estado | Desde | Motivo |

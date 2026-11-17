@@ -16,7 +16,7 @@ DRIFT=0
 FAILED_PLUGINS=()
 REPO_MARKETPLACE_FRESH=0
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/agent-config"
-RECOMMENDED_TOOLS=(rg fd ast-grep shellcheck shfmt actionlint zizmor prek trash uv)
+RECOMMENDED_TOOLS=(rg fd ast-grep shellcheck shfmt actionlint zizmor prek trash uv graphify)
 
 usage() { sed -n '2,8s/^# \{0,1\}//p' "${BASH_SOURCE[0]}"; }
 
@@ -166,6 +166,22 @@ install_other_agents() {
   fi
 }
 
+# Append each line of global/gitignore that the global git ignore lacks; never rewrite the file.
+install_git_ignore() {
+  local file line
+  file="$(git config --global --path --get core.excludesFile || true)"
+  [[ -n "$file" ]] || file="${XDG_CONFIG_HOME:-$HOME/.config}/git/ignore"
+  log "Git global ignore ($file)"
+  while IFS= read -r line; do
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    [[ -f "$file" ]] && grep -qxF "$line" "$file" && continue
+    pending "add $line to $file" || continue
+    mkdir -p "$(dirname "$file")"
+    if [[ -s "$file" && -n "$(tail -c1 "$file")" ]]; then printf '\n' >>"$file"; fi
+    printf '%s\n' "$line" >>"$file"
+  done <"$REPO_DIR/global/gitignore"
+}
+
 install_machine_config() {
   local config="$CONFIG_DIR/config.env" current
   log "Machine config ($config)"
@@ -254,6 +270,7 @@ main() {
   install_shared
   install_claude
   install_other_agents
+  install_git_ignore
   install_machine_config
   install_plugins
   report_tools

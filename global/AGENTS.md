@@ -164,8 +164,35 @@ Use these when installed; `./install.sh --check` in the agent-config repo lists 
 | `zizmor` | - | `zizmor .github/workflows/` - Actions security audit |
 | `prek` | pre-commit | `prek run` - fast git hooks (Rust, no Python) |
 | `trash` | rm | `trash file` - recoverable delete (`trash-cli` on Linux). **Never use `rm -rf`** |
+| `graphify` | re-reading a codebase | `graphify query "<question>"` - code graph, see below |
 
 Prefer `ast-grep` over ripgrep when searching for code structure (function calls, class definitions, imports, pattern matching across arguments). Use ripgrep for literal strings and log messages.
+
+### Code graph (graphify)
+
+[graphify](https://github.com/Graphify-Labs/graphify) parses a repo with tree-sitter into a
+graph of files, symbols, imports and calls at `graphify-out/`, locally and without an LLM. It
+tells you how a codebase fits together without re-reading it every session.
+
+- **When `graphify-out/graph.json` exists at the repo root**, start every structural question
+  (where X lives, what calls Y, how A reaches B, what a change to Z touches) with
+  `graphify query "<question>"`, `graphify explain "<symbol or file>"` or
+  `graphify path "<A>" "<B>"`, then read only the lines the graph points to. Put this rule in
+  every subagent brief that explores code. Read `graphify-out/GRAPH_REPORT.md` only for a broad
+  architecture review.
+- **Keep it current.** After changing code in a repo that has a graph, run
+  `graphify update .` before you finish (AST only, a few seconds). Run it first too when the
+  report's "Built from commit" is not `HEAD`, as after a pull or a branch switch.
+- **Every repo with code has one.** If the repo you work in has code but no graph, build it
+  before exploring and tell me you did:
+  `GRAPHIFY_BACKEND=none graphify extract . --code-only && GRAPHIFY_BACKEND=none graphify cluster-only .`
+  A repo with only Markdown gets none: reading the notes costs less than a model pass over them.
+- **Code only, no LLM.** `GRAPHIFY_BACKEND=none` (Claude Code sets it for every session) keeps
+  graphify from sending files to a model or spending usage on `claude -p` to name communities.
+  Don't run the `/graphify` semantic pass or pass `--backend` unless I ask.
+- **Never committed.** `graphify-out/` is in the global git ignore: it is rewritten whole on
+  every build and would conflict across parallel PRs. A worktree has no graph; query the main
+  clone's with `--graph <main clone>/graphify-out/graph.json` when the code is the same.
 
 ### Python
 

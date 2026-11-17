@@ -37,6 +37,7 @@ it into each agent's config directory on any machine. Updating a machine means
 | Path | Installed to |
 |---|---|
 | `global/AGENTS.md` | `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` |
+| `global/gitignore` | missing lines appended to the global git ignore (`core.excludesFile`, else `~/.config/git/ignore`) |
 | `skills/*` | `~/.agents/skills/`, `~/.claude/skills/`, `~/.pi/agent/skills/` |
 | `agents/claude/CLAUDE.md` | `~/.claude/CLAUDE.md` (imports `~/.agents/AGENTS.md`) |
 | `agents/claude/settings.json` | merged into `~/.claude/settings.json` |
