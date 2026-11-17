@@ -50,7 +50,7 @@ type World = {
   panes: Pane[]
   opened: string[]
   placesOnOpen: boolean
-  /** What another mod draws in the band above the prompt; null leaves the band empty. */
+  /** What another mod draws in its row of the band above the prompt; null leaves it blank. */
   band: string | null
   toolsRegistered: unknown[]
   commandsRegistered: string[]
@@ -273,7 +273,10 @@ async function column($: Engine, placement: 'dock' | 'inline' = 'dock', bodyColu
   return rows
 }
 
-/** The band above the prompt: the header's rows, or `beneath: <text>` when it lets it be. */
+/**
+ * The band above the prompt, one row per plugin: the header's rows, or `beneath: <text>` with
+ * the other mod's row when the header leaves the band to it.
+ */
 async function header($: Engine, isFullscreen = false, bodyColumns = 120) {
   const ui = await $.ui.mount({
     plugin: 'task-progress',
@@ -281,6 +284,7 @@ async function header($: Engine, isFullscreen = false, bodyColumns = 120) {
     component: 'AbovePrompt',
     props: {
       hasSurvey: false,
+      isCollapsed: false,
       isWorking: true,
       maxRows: 6,
       bodyColumns,
@@ -293,7 +297,7 @@ async function header($: Engine, isFullscreen = false, bodyColumns = 120) {
   const rows = await rowsOf(ui)
   await ui.unmount()
 
-  return own === undefined ? rows : [`beneath: ${own.text}`]
+  return rows.length > 0 || own === undefined ? rows : [`beneath: ${own.text}`]
 }
 
 // ── The task ──────────────────────────────────────────────────────────────────────────────
