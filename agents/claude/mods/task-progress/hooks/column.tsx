@@ -51,9 +51,13 @@ export function drawLines(ui: Ui, lines: readonly Line[], width: number) {
   )
 }
 
-/** True when a drawing shows nothing: no text and no control anywhere in it. */
+/**
+ * True when a drawing shows nothing: no text and no control anywhere in it. A reference to
+ * core's own drawing (`{ type: 'engine' }`) counts as blank: a mod that passes hands its row back
+ * to core, and what core draws in the band itself, a survey, arrives as `hasSurvey`.
+ */
 export function isBlank(node: RenderNode | null | undefined): boolean {
-  if (node === null || node === undefined) {
+  if (node === null || node === undefined || (typeof node === 'object' && node.type === 'engine')) {
     return true
   }
 
@@ -126,11 +130,10 @@ export function drawColumn(on: On): void {
     return drawLines($.ui.resolve(e), lines, e.props.bodyColumns)
   })
 
-  // The header: the column's summary in the band above the prompt, wherever the column is not
-  // drawn. In the fullscreen layout it also opens the column, which the terminal docks once it
-  // is wide enough; the person closing it keeps it closed until /columna.
-  // The band goes first to whatever else draws there (a survey, a mod's held command with its
-  // Proceed and Cancel): the header only fills it while it would otherwise be empty.
+  // The header: the column's summary in this mod's row of the band above the prompt, wherever
+  // the column is not drawn. In the fullscreen layout it also opens the column, which the
+  // terminal docks once it is wide enough; the person closing it keeps it closed until /columna.
+  // A survey holding the band keeps the row empty.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { isOpen, isShown } = await columnOf($)
 
@@ -141,14 +144,24 @@ export function drawColumn(on: On): void {
       )
     }
 
-    const beneath = await next(e)
-
-    if (e.props.hasSurvey || isShown || !isBlank(beneath)) {
-      return beneath
+    if (e.props.hasSurvey || isShown) {
+      return next(e)
     }
 
     const lines = bandLines(await viewOf($), Math.min(HEADER_ROWS, e.props.maxRows))
 
-    return lines.length === 0 ? beneath : drawLines($.ui.resolve(e), lines, e.props.bodyColumns)
+    return lines.length === 0 ? next(e) : drawLines($.ui.resolve(e), lines, e.props.bodyColumns)
+  })
+
+  // The band goes first to another mod's row (a held command with its Proceed and Cancel): the
+  // header leaves its own row out while any other row shows something.
+  on('ui.render', { component: 'AbovePromptList' }, ($, e, next) => {
+    const others = e.props.rows.filter(row => row.plugin !== $.plugin.name)
+
+    if (!others.some(row => !isBlank(row.tree))) {
+      return next(e)
+    }
+
+    return next({ ...e, props: { ...e.props, rows: others } })
   })
 }
