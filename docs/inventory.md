@@ -32,14 +32,15 @@ carpeta de config ya existe).
 | `cloud-run-basics` | activo | Cloud Run: servicios, jobs y worker pools; despliegue desde imagen o desde código, IAM, redes y Terraform |
 | `bigquery-basics` | activo | BigQuery: datasets, tablas y consultas con `bq`, librerías cliente, IAM y Terraform |
 | `google-tag-manager` | activo | Google Tag Manager, solo asesora (no usa la API): auditoría de contenedores, arquitectura de tags, triggers y variables, Consent Mode v2, server-side y depuración |
+| `security-audit` | activo | Auditoría de seguridad de un repo (de Cloudflare): guía para preguntas y revisiones puntuales; con un pedido explícito de auditoría corre seis fases con subagentes (reconocimiento, búsqueda por cobertura, validación adversarial, `findings.json` validado, verificación independiente e informe) y escribe fuera del repo, en `~/security-audit-skill/<repo>/run-<N>` |
 
 Skills externas que **no** gestiona este repo: `omarchy` (la instala Omarchy en
 `~/.claude/skills`, `~/.agents/skills`, `~/.codex/skills` y `~/.pi/agent/skills`).
 
 ### Skills de terceros
 
-Las de Google Cloud y `google-tag-manager` son copias de repositorios ajenos, fijadas a un
-commit. Se copian, en lugar de instalarse como plugin o descargarse al instalar, para que
+Las de Google Cloud, `google-tag-manager` y `security-audit` son copias de repositorios
+ajenos, fijadas a un commit. Se copian, en lugar de instalarse como plugin o descargarse al instalar, para que
 lleguen a todos los agentes y para que lo instalado sea lo que se revisó: no cambia hasta que
 alguien actualiza la copia. Para actualizar una, volver a copiar su carpeta desde el commit
 nuevo, leer el diff y cambiar el commit en esta tabla.
@@ -52,9 +53,12 @@ nuevo, leer el diff y cambiar el commit en esta tabla.
 | `cloud-run-basics` | `google/skills`, `skills/cloud/cloud-run-basics` | `a39a861` (2026-10-12) | Apache-2.0 | Ninguno |
 | `bigquery-basics` | `google/skills`, `skills/cloud/bigquery-basics` | `a39a861` (2026-10-12) | Apache-2.0 | Ninguno |
 | `google-tag-manager` | [`thatrebeccarae/claude-marketing`](https://github.com/thatrebeccarae/claude-marketing), `skills/google-tag-manager` | `a8a63ec` (2026-05-14) | MIT | `SKILL.md` sin las secciones `Install` y `Related Tools`: apuntaban a una skill y a un agente que este repo no trae |
+| `security-audit` | [`cloudflare/security-audit-skill`](https://github.com/cloudflare/security-audit-skill), `skills/security-audit` | `c1c8a8c` (2026-09-14) | MIT | Ninguno; se suma el `LICENSE` del repo en su carpeta |
 
 La licencia de `google/skills` está en `docs/third-party-licenses/google-skills-LICENSE.txt`;
-la de `google-tag-manager`, en su carpeta.
+las de `google-tag-manager` y `security-audit`, en su carpeta.
+
+Lo que conviene saber de `security-audit`: el modo auditoría lanza decenas de subagentes por repo (perfiles `quick`, `standard` y `deep`, con presupuesto opcional de agentes). Solo lee código: no prueba endpoints desplegados ni servicios externos, y ejecuta código del repo auditado solo dentro de un sandbox del sistema sin red; si no lo hay, el hallazgo queda como `needs_validation`. Sus dos validadores (`validate-*.cjs`) usan solo `node:fs` para leer los archivos que reciben.
 
 Dos cosas que hacen las skills de Google y conviene saber:
 

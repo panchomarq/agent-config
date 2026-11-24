@@ -5,6 +5,17 @@ Versionado: [SemVer](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-11-24
+
+### Added
+
+- Skill `security-audit`, copiada de `cloudflare/security-audit-skill` (MIT) en el commit
+  `c1c8a8c`, sin cambios y con su `LICENSE`. Responde preguntas de seguridad y, con un
+  pedido explícito de auditoría, corre seis fases con subagentes: reconocimiento, búsqueda
+  guiada por un registro de cobertura, validación adversarial de cada candidato,
+  `findings.json` validado contra un esquema, verificación independiente e informe. Solo
+  lee código y no prueba nada desplegado.
+
 ## [1.12.1] - 2026-11-16
 
 ### Fixed
