@@ -16,7 +16,7 @@ agent-config/
 ├── skills/                   skills en formato estándar (SKILL.md)
 │   ├── obsidian-vault/       cómo leer/escribir el vault + plantillas de notas
 │   ├── new-project/          estructura estándar de repos + plantilla
-│   └── …                     skills de terceros (Google Cloud, Tag Manager): ver el inventario
+│   └── …                     skills de terceros (Google Cloud, Tag Manager, Cloudflare): ver inventario
 ├── agents/
 │   ├── claude/               CLAUDE.md, settings.json, statusline.sh, comandos, mods/
 │   └── opencode/             opencode.json (modelos locales vía Ollama)
